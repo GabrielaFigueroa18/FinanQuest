@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
-import com.finanquest.sv.ui.bienvenida.BienvenidaScreen
+import com.finanquest.sv.navigation.AppNavigation
 
 class MainActivity : ComponentActivity() {
 
@@ -14,14 +14,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                BienvenidaScreen(
-                    onIniciarSesion = {
-                        // Aquí conectaremos LoginScreen
-                    },
-                    onCrearCuenta = {
-                        // Aquí conectaremos RegistroScreen
-                    }
-                )
+                AppNavigation()
             }
         }
     }
