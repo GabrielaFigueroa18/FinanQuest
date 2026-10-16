@@ -7,12 +7,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.finanquest.sv.data.model.Usuario
 import com.finanquest.sv.data.repository.AuthRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class AuthViewModel : ViewModel() {
 
     private val repository = AuthRepository()
+    private val firebaseAuth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
-    // Estados que observarán las pantallas
     var cargando by mutableStateOf(false)
         private set
 
@@ -27,7 +30,6 @@ class AuthViewModel : ViewModel() {
     )
         private set
 
-    // Registrar un estudiante
     fun registrar(
         nombre: String,
         correo: String,
@@ -37,8 +39,11 @@ class AuthViewModel : ViewModel() {
     ) {
         if (cargando) return
 
-        if (nombre.isBlank() || correo.isBlank() ||
-            contrasena.isBlank() || confirmarContrasena.isBlank()
+        if (
+            nombre.isBlank() ||
+            correo.isBlank() ||
+            contrasena.isBlank() ||
+            confirmarContrasena.isBlank()
         ) {
             mensaje = "Completa todos los campos"
             return
@@ -69,7 +74,6 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Iniciar sesión
     fun iniciarSesion(
         correo: String,
         contrasena: String,
@@ -96,10 +100,8 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Consultar el perfil en Firestore
     fun cargarPerfil() {
         repository.obtenerPerfil { perfil, error ->
-
             if (perfil != null) {
                 usuario = perfil
             } else {
@@ -108,7 +110,62 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Recuperar contraseña
+    // ACTUALIZAR DATOS PERSONALES EN FIRESTORE
+    fun actualizarDatosPersonales(
+        nombre: String,
+        universidad: String,
+        onExito: () -> Unit
+    ) {
+        if (cargando) return
+
+        val nombreLimpio = nombre.trim()
+        val universidadLimpia = universidad.trim()
+
+        if (nombreLimpio.isBlank() || universidadLimpia.isBlank()) {
+            mensaje = "Completa tu nombre y universidad"
+            return
+        }
+
+        if (nombreLimpio.length > 100 ||
+            universidadLimpia.length > 150
+        ) {
+            mensaje = "Los datos son demasiado largos"
+            return
+        }
+
+        val uid = firebaseAuth.currentUser?.uid
+
+        if (uid == null) {
+            mensaje = "Debes iniciar sesión nuevamente"
+            return
+        }
+
+        cargando = true
+        mensaje = ""
+
+        val cambios = mapOf(
+            "nombre" to nombreLimpio,
+            "universidad" to universidadLimpia
+        )
+
+        firestore.collection("usuarios")
+            .document(uid)
+            .update(cambios)
+            .addOnSuccessListener {
+                cargando = false
+                mensaje = "Datos actualizados correctamente"
+
+                // Recargar datos para Perfil y Dashboard
+                cargarPerfil()
+
+                onExito()
+            }
+            .addOnFailureListener { error ->
+                cargando = false
+                mensaje = "No se pudieron guardar los cambios: ${error.localizedMessage}"
+            }
+    }
+
     fun recuperarContrasena(correo: String) {
         if (cargando) return
 
@@ -121,7 +178,6 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // Cerrar sesión
     fun cerrarSesion() {
         repository.cerrarSesion()
 
@@ -131,7 +187,6 @@ class AuthViewModel : ViewModel() {
         cargando = false
     }
 
-    // Limpiar mensajes anteriores
     fun limpiarMensaje() {
         mensaje = ""
     }
