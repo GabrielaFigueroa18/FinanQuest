@@ -48,6 +48,7 @@ fun DashboardScreen(
     onMascota: () -> Unit = {},
     onNiveles: () -> Unit = {},
     onPerfil: () -> Unit = {},
+    onMisiones: () -> Unit = {},
     onPresupuestos: () -> Unit = {},
     onNuevoGasto: () -> Unit = {},
     onNuevaMeta: () -> Unit = {},
@@ -152,7 +153,7 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(18.dp))
 
-            TarjetaMision()
+            TarjetaMision(onClick = onMisiones)
 
             Spacer(Modifier.height(24.dp))
 
@@ -597,11 +598,11 @@ private fun AlertaPresupuesto(
 }
 
 @Composable
-private fun TarjetaMision() {
+private fun TarjetaMision(onClick: () -> Unit) {
     val progreso = 0.65f
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(17.dp),
         color = Fondo,
         border = BorderStroke(1.dp, Borde),
@@ -673,6 +674,14 @@ private fun TarjetaMision() {
             BarraProgreso(
                 progreso = progreso,
                 color = Morado
+            )
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "VER TODAS MIS MISIONES  ›",
+                color = Verde,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
             )
         }
     }
@@ -964,3 +973,4 @@ private fun RowScope.ItemMenu(
         )
     )
 }
+
