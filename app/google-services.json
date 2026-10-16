@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "628728984674",
+    "project_id": "finanquestsv",
+    "storage_bucket": "finanquestsv.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628728984674:android:9820cd8816817382cf0d3b",
+        "android_client_info": {
+          "package_name": "com.finanquest.sv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBj-vxTA_te7FiW-Yzb1we1A-1L7PKvueE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
