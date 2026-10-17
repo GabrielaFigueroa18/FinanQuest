@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+/finanquest-backend/node_modules/
+/finanquest-backend/.env
+/finanquest-backend/serviceAccountKey.json

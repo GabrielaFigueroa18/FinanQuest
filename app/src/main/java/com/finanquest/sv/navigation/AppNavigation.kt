@@ -11,11 +11,12 @@ import com.finanquest.sv.ui.perfil.PerfilScreen
 import com.finanquest.sv.ui.perfil.InformacionPersonalScreen
 import com.finanquest.sv.ui.perfil.SeguridadScreen
 import com.finanquest.sv.ui.misiones.MisionesScreen
+import com.finanquest.sv.ui.misiones.LeccionInversionesScreen
 import com.finanquest.sv.viewmodel.AuthViewModel
 
 private enum class Pantalla {
     BIENVENIDA, LOGIN, REGISTRO, DASHBOARD, PERFIL,
-    INFORMACION_PERSONAL, SEGURIDAD, MISIONES
+    INFORMACION_PERSONAL, SEGURIDAD, MISIONES, LECCION_INVERSIONES
 }
 
 @Composable
@@ -33,11 +34,13 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
                 pantalla == Pantalla.PERFIL ||
                 pantalla == Pantalla.INFORMACION_PERSONAL ||
                 pantalla == Pantalla.SEGURIDAD ||
-                pantalla == Pantalla.MISIONES
+                pantalla == Pantalla.MISIONES ||
+                pantalla == Pantalla.LECCION_INVERSIONES
     ) {
         authViewModel.limpiarMensaje()
         pantalla = when (pantalla) {
             Pantalla.INFORMACION_PERSONAL, Pantalla.SEGURIDAD -> Pantalla.PERFIL
+            Pantalla.LECCION_INVERSIONES -> Pantalla.MISIONES
             Pantalla.PERFIL, Pantalla.MISIONES -> Pantalla.DASHBOARD
             else -> Pantalla.BIENVENIDA
         }
@@ -116,7 +119,12 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
         Pantalla.MISIONES -> MisionesScreen(
             onVolver = { pantalla = Pantalla.DASHBOARD },
             onInicio = { pantalla = Pantalla.DASHBOARD },
-            onPerfil = { pantalla = Pantalla.PERFIL }
+            onPerfil = { pantalla = Pantalla.PERFIL },
+            onAbrirLeccionInversiones = { pantalla = Pantalla.LECCION_INVERSIONES }
+        )
+        Pantalla.LECCION_INVERSIONES -> LeccionInversionesScreen(
+            onVolver = { pantalla = Pantalla.MISIONES },
+            onAprobado = { pantalla = Pantalla.MISIONES }
         )
     }
 }

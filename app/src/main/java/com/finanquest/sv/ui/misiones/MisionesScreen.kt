@@ -1,5 +1,7 @@
+
 package com.finanquest.sv.ui.misiones
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 private val Fondo = Color(0xFFF7F8FA)
 private val Morado = Color(0xFF9B70FA)
@@ -29,6 +33,7 @@ private val Gris = Color(0xFF777D87)
 private val Borde = Color(0xFFE5E7EB)
 
 private data class Mision(
+    val id: String,
     val titulo: String,
     val descripcion: String,
     val xp: Int,
@@ -37,24 +42,24 @@ private data class Mision(
     val detalle: String
 )
 
-// Misiones de ejemplo: todavía no están conectadas a Firestore.
+// Catálogo inicial local; el progreso de cada usuario se consulta en Firestore.
 private val misionesDemo = listOf(
     Mision(
-        "Primer Ahorro Semanal",
+        "primer_ahorro_semanal", "Primer Ahorro Semanal",
         "Guarda al menos $5.00 en tu alcancía digital esta semana.",
-        250, 80, Icons.Filled.Savings,
+        250, 0, Icons.Filled.Savings,
         "Ahorra $5.00 durante la semana. Cuando conectemos el módulo de ahorro, el progreso se calculará automáticamente."
     ),
     Mision(
-        "Maestro de Presupuesto",
+        "maestro_presupuesto", "Maestro de Presupuesto",
         "Completa el módulo educativo sobre presupuestos universitarios.",
-        150, 45, Icons.Filled.School,
+        150, 0, Icons.Filled.School,
         "Completa la lección de presupuestos y su evaluación para recibir la recompensa."
     ),
     Mision(
-        "Inversionista Novato",
+        "inversionista_novato", "Inversionista Novato",
         "Lee el artículo sobre fondos de inversión locales.",
-        100, 10, Icons.Filled.TrendingUp,
+        100, 0, Icons.Filled.TrendingUp,
         "Lee el contenido educativo sobre inversión y responde la actividad de comprensión."
     )
 )
@@ -63,14 +68,63 @@ private val misionesDemo = listOf(
 fun MisionesScreen(
     onVolver: () -> Unit,
     onInicio: () -> Unit = onVolver,
-    onPerfil: () -> Unit = {}
+    onPerfil: () -> Unit = {},
+    onAbrirLeccionInversiones: () -> Unit = {}
 ) {
     var busqueda by remember { mutableStateOf("") }
     var pestana by remember { mutableIntStateOf(0) }
     var misionDetalle by remember { mutableStateOf<Mision?>(null) }
     var aviso by remember { mutableStateOf<String?>(null) }
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
 
-    val visibles = misionesDemo.filter {
+    LaunchedEffect(uid) {
+        Log.d("MISIONES_DEBUG", "UID actual: $uid")
+    }
+    var progresos by remember(uid) { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var cargandoMisiones by remember(uid) { mutableStateOf(uid != null) }
+    var errorMisiones by remember(uid) { mutableStateOf<String?>(null) }
+
+    DisposableEffect(uid) {
+        if (uid == null) {
+            cargandoMisiones = false
+            errorMisiones = "Inicia sesión para consultar tus misiones."
+            onDispose { }
+        } else {
+            val registro = FirebaseFirestore.getInstance()
+                .collection("usuarios")
+                .document(uid)
+                .collection("progreso_misiones")
+                .addSnapshotListener { instantanea, error ->
+                    Log.d(
+                        "MISIONES_DEBUG",
+                        "Error: ${error?.message}, documentos: ${instantanea?.documents?.size}"
+                    )
+                    instantanea?.documents?.forEach { documento ->
+                        Log.d(
+                            "MISIONES_DEBUG",
+                            "Documento: ${documento.id}, progreso: ${documento.get("progreso")}"
+                        )
+                    }
+                    cargandoMisiones = false
+                    if (error != null) {
+                        errorMisiones = "No se pudo cargar el progreso: ${error.localizedMessage}"
+                    } else {
+                        errorMisiones = null
+                        progresos = instantanea?.documents?.associate { documento ->
+                            documento.id to ((documento.getLong("progreso") ?: 0L)
+                                .toInt().coerceIn(0, 100))
+                        } ?: emptyMap()
+                    }
+                }
+            onDispose { registro.remove() }
+        }
+    }
+
+    val misiones = misionesDemo.map { mision ->
+        mision.copy(progreso = progresos[mision.id] ?: 0)
+    }
+
+    val visibles = misiones.filter {
         it.titulo.contains(busqueda.trim(), ignoreCase = true) ||
                 it.descripcion.contains(busqueda.trim(), ignoreCase = true)
     }.filter { if (pestana == 0) it.progreso < 100 else it.progreso == 100 }
@@ -150,7 +204,7 @@ fun MisionesScreen(
                     .background(Color(0xFFF1F1F4), RoundedCornerShape(16.dp))
                     .padding(4.dp)
             ) {
-                listOf("Activas  ${misionesDemo.count { it.progreso < 100 }}", "Completadas").forEachIndexed { index, texto ->
+                listOf("Activas  ${misiones.count { it.progreso < 100 }}", "Completadas").forEachIndexed { index, texto ->
                     Surface(
                         modifier = Modifier.weight(1f).clickable { pestana = index },
                         shape = RoundedCornerShape(14.dp),
@@ -170,6 +224,14 @@ fun MisionesScreen(
             }
             Spacer(Modifier.height(18.dp))
 
+            if (cargandoMisiones) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+                Spacer(Modifier.height(12.dp))
+            }
+            errorMisiones?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            }
             if (visibles.isEmpty()) {
                 Text(
                     if (pestana == 1) "Todavía no tienes misiones completadas."
@@ -179,7 +241,13 @@ fun MisionesScreen(
                 )
             } else {
                 visibles.forEach { mision ->
-                    TarjetaMision(mision, onDetalle = { misionDetalle = mision })
+                    TarjetaMision(mision, onDetalle = {
+                        if (mision.id == "inversionista_novato") {
+                            onAbrirLeccionInversiones()
+                        } else {
+                            misionDetalle = mision
+                        }
+                    })
                     Spacer(Modifier.height(14.dp))
                 }
             }
@@ -212,8 +280,8 @@ fun MisionesScreen(
                 Column {
                     Text(mision.detalle)
                     Spacer(Modifier.height(12.dp))
-                    Text("Progreso de ejemplo: ${mision.progreso}%")
-                    Text("Recompensa futura: +${mision.xp} XP", color = Verde)
+                    Text("Progreso registrado: ${mision.progreso}%")
+                    Text("Recompensa prevista: +${mision.xp} XP", color = Verde)
                 }
             },
             confirmButton = {
