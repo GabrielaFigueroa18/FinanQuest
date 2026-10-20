@@ -9,12 +9,17 @@ import com.finanquest.sv.data.model.Usuario
 import com.finanquest.sv.data.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
 class AuthViewModel : ViewModel() {
 
     private val repository = AuthRepository()
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
+
+    // Escucha los cambios del perfil en Firestore
+    private var perfilListener: ListenerRegistration? = null
+    private var uidEscuchado: String? = null
 
     var cargando by mutableStateOf(false)
         private set
@@ -29,6 +34,10 @@ class AuthViewModel : ViewModel() {
         repository.obtenerUsuarioActual() != null
     )
         private set
+
+    // =========================================
+    // REGISTRAR USUARIO
+    // =========================================
 
     fun registrar(
         nombre: String,
@@ -69,10 +78,15 @@ class AuthViewModel : ViewModel() {
             if (exito) {
                 sesionIniciada = true
                 cargarPerfil()
+                escucharCambiosPerfil()
                 onExito()
             }
         }
     }
+
+    // =========================================
+    // INICIAR SESIÓN
+    // =========================================
 
     fun iniciarSesion(
         correo: String,
@@ -95,13 +109,19 @@ class AuthViewModel : ViewModel() {
             if (exito) {
                 sesionIniciada = true
                 cargarPerfil()
+                escucharCambiosPerfil()
                 onExito()
             }
         }
     }
 
+    // =========================================
+    // CARGAR PERFIL
+    // =========================================
+
     fun cargarPerfil() {
         repository.obtenerPerfil { perfil, error ->
+
             if (perfil != null) {
                 usuario = perfil
             } else {
@@ -110,7 +130,47 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // ACTUALIZAR DATOS PERSONALES EN FIRESTORE
+    // =========================================
+    // ESCUCHAR CAMBIOS EN FIRESTORE
+    // =========================================
+
+    fun escucharCambiosPerfil() {
+
+        val uid = firebaseAuth.currentUser?.uid ?: return
+
+        // Evitar crear escuchas duplicadas
+        if (perfilListener != null && uidEscuchado == uid) {
+            return
+        }
+
+        perfilListener?.remove()
+        perfilListener = null
+        uidEscuchado = uid
+
+        perfilListener = firestore
+            .collection("usuarios")
+            .document(uid)
+            .addSnapshotListener { documento, error ->
+
+                // Ignorar errores temporales de lectura
+                if (error != null) {
+                    return@addSnapshotListener
+                }
+
+                if (documento == null || !documento.exists()) {
+                    return@addSnapshotListener
+                }
+
+                // Actualizar los datos del usuario
+                // cuando Firestore detecte cambios.
+                cargarPerfil()
+            }
+    }
+
+    // =========================================
+    // ACTUALIZAR DATOS PERSONALES
+    // =========================================
+
     fun actualizarDatosPersonales(
         nombre: String,
         universidad: String,
@@ -121,12 +181,16 @@ class AuthViewModel : ViewModel() {
         val nombreLimpio = nombre.trim()
         val universidadLimpia = universidad.trim()
 
-        if (nombreLimpio.isBlank() || universidadLimpia.isBlank()) {
+        if (
+            nombreLimpio.isBlank() ||
+            universidadLimpia.isBlank()
+        ) {
             mensaje = "Completa tu nombre y universidad"
             return
         }
 
-        if (nombreLimpio.length > 100 ||
+        if (
+            nombreLimpio.length > 100 ||
             universidadLimpia.length > 150
         ) {
             mensaje = "Los datos son demasiado largos"
@@ -152,19 +216,26 @@ class AuthViewModel : ViewModel() {
             .document(uid)
             .update(cambios)
             .addOnSuccessListener {
+
                 cargando = false
                 mensaje = "Datos actualizados correctamente"
 
-                // Recargar datos para Perfil y Dashboard
+                // Actualizar Perfil y Dashboard
                 cargarPerfil()
 
                 onExito()
             }
             .addOnFailureListener { error ->
+
                 cargando = false
-                mensaje = "No se pudieron guardar los cambios: ${error.localizedMessage}"
+                mensaje =
+                    "No se pudieron guardar los cambios: ${error.localizedMessage}"
             }
     }
+
+    // =========================================
+    // RECUPERAR CONTRASEÑA
+    // =========================================
 
     fun recuperarContrasena(correo: String) {
         if (cargando) return
@@ -173,12 +244,23 @@ class AuthViewModel : ViewModel() {
         mensaje = ""
 
         repository.recuperarContrasena(correo) { _, respuesta ->
+
             cargando = false
             mensaje = respuesta
         }
     }
 
+    // =========================================
+    // CERRAR SESIÓN
+    // =========================================
+
     fun cerrarSesion() {
+
+        // Detener actualizaciones del usuario anterior
+        perfilListener?.remove()
+        perfilListener = null
+        uidEscuchado = null
+
         repository.cerrarSesion()
 
         usuario = null
@@ -187,7 +269,24 @@ class AuthViewModel : ViewModel() {
         cargando = false
     }
 
+    // =========================================
+    // LIMPIAR MENSAJES
+    // =========================================
+
     fun limpiarMensaje() {
         mensaje = ""
+    }
+
+    // =========================================
+    // LIBERAR RECURSOS
+    // =========================================
+
+    override fun onCleared() {
+
+        perfilListener?.remove()
+        perfilListener = null
+        uidEscuchado = null
+
+        super.onCleared()
     }
 }

@@ -1,4 +1,3 @@
-
 package com.finanquest.sv.ui.dashboard
 
 import androidx.compose.foundation.BorderStroke
@@ -13,6 +12,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +28,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finanquest.sv.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Locale
 
 private val Fondo = Color(0xFFF7F8FA)
@@ -61,6 +67,7 @@ fun DashboardScreen(
 ) {
     LaunchedEffect(Unit) {
         authViewModel.cargarPerfil()
+        authViewModel.escucharCambiosPerfil()
     }
 
     val usuario = authViewModel.usuario
@@ -72,8 +79,31 @@ fun DashboardScreen(
         ?.takeUnless { it.isNullOrBlank() }
         ?: "Estudiante"
 
-    val nivel = usuario?.nivel ?: 1
-    val xp = usuario?.xp ?: 0
+    // Escucha los XP y el nivel directamente en Firestore para reflejar
+    // las recompensas otorgadas por el backend, sin recargar la pantalla.
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+    var progresoActual by remember(uid) { mutableStateOf<Pair<Int, Int>?>(null) }
+
+    DisposableEffect(uid) {
+        if (uid == null) {
+            onDispose { }
+        } else {
+            val registro = FirebaseFirestore.getInstance()
+                .collection("usuarios")
+                .document(uid)
+                .addSnapshotListener { documento, error ->
+                    if (error == null && documento != null && documento.exists()) {
+                        val xpFirestore = documento.getLong("xp")?.toInt() ?: 0
+                        val nivelFirestore = documento.getLong("nivel")?.toInt() ?: 1
+                        progresoActual = xpFirestore to nivelFirestore
+                    }
+                }
+            onDispose { registro.remove() }
+        }
+    }
+
+    val nivel = progresoActual?.second ?: (usuario?.nivel ?: 1)
+    val xp = progresoActual?.first ?: (usuario?.xp ?: 0)
 
     // DATOS DE DEMOSTRACIÓN
     // Luego se reemplazarán por datos reales de Firebase.
@@ -126,7 +156,7 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            MensajeMascota(nivel = nivel)
+            MensajeMascota(nivel = nivel, xp = xp)
 
             Spacer(Modifier.height(20.dp))
 
@@ -242,7 +272,7 @@ fun DashboardScreen(
             Spacer(Modifier.height(26.dp))
 
             Text(
-                text = "Resumen de demostración · XP actual: $xp",
+                text = "XP acumulados: $xp · Nivel $nivel",
                 modifier = Modifier.fillMaxWidth(),
                 color = Gris,
                 fontSize = 11.sp,
@@ -310,7 +340,8 @@ private fun EncabezadoDashboard(
 
 @Composable
 private fun MensajeMascota(
-    nivel: Int
+    nivel: Int,
+    xp: Int
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -340,7 +371,7 @@ private fun MensajeMascota(
             shadowElevation = 2.dp
         ) {
             Text(
-                text = "¡Estás a solo 150 XP de subir al Nivel ${nivel + 1}! ¡Sigue así!",
+                text = "¡Te faltan ${100 - (xp.coerceAtLeast(0) % 100)} XP para subir al Nivel ${nivel + 1}! ¡Sigue así!",
                 modifier = Modifier.padding(12.dp),
                 fontSize = 12.sp,
                 lineHeight = 18.sp,
@@ -973,4 +1004,3 @@ private fun RowScope.ItemMenu(
         )
     )
 }
-

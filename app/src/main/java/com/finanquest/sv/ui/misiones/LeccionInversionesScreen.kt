@@ -1,5 +1,5 @@
 package com.finanquest.sv.ui.misiones
-
+import com.finanquest.sv.network.MisionesApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,9 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 
 private val VerdeLeccion = Color(0xFF16A34A)
 private val MoradoLeccion = Color(0xFF9B70FA)
@@ -41,32 +38,41 @@ fun LeccionInversionesScreen(onVolver: () -> Unit, onAprobado: () -> Unit = {}) 
     var guardado by remember { mutableStateOf(false) }
     var errorGuardado by remember { mutableStateOf<String?>(null) }
     val correctas = resultado
+    var xpOtorgados by remember { mutableIntStateOf(0) }
+    var recompensaYaOtorgada by remember { mutableStateOf(false) }
 
     fun guardarResultado() {
-        val puntaje = resultado ?: return
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-        if (uid == null) {
-            errorGuardado = "Debes iniciar sesión para guardar tu evaluación."
+        if (guardando || guardado) return
+        if (respuestas.any { it == null }) {
+            errorGuardado = "Responde todas las preguntas."
             return
         }
+
         guardando = true
         errorGuardado = null
-        val datos = hashMapOf<String, Any>(
-            "misionId" to "inversionista_novato",
-            "respuestas" to respuestas.map { it ?: -1 },
-            "correctas" to puntaje,
-            "totalPreguntas" to preguntasInversion.size,
-            "porcentaje" to (puntaje * 100 / preguntasInversion.size),
-            "aprobada" to (puntaje >= 4),
-            "fecha" to FieldValue.serverTimestamp()
-        )
-        FirebaseFirestore.getInstance().collection("usuarios").document(uid)
-            .collection("evaluaciones_misiones").add(datos)
-            .addOnSuccessListener { guardando = false; guardado = true }
-            .addOnFailureListener { e ->
-                guardando = false
-                errorGuardado = "No se pudo guardar: ${e.localizedMessage}"
+
+        MisionesApi.completarInversionistaNovato(
+            respuestas = respuestas.map { it!! },
+            onResultado = { respuesta ->
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    guardando = false
+                    if (respuesta.optBoolean("ok", false)) {
+                        resultado = respuesta.optInt("correctas", 0)
+                        xpOtorgados = respuesta.optInt("xpOtorgados", 0)
+                        recompensaYaOtorgada = respuesta.optBoolean("recompensaYaOtorgada", false)
+                        guardado = true
+                    } else {
+                        errorGuardado = "No se pudo registrar la evaluación."
+                    }
+                }
+            },
+            onError = { mensaje ->
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    guardando = false
+                    errorGuardado = mensaje
+                }
             }
+        )
     }
 
     Scaffold(containerColor = FondoLeccion, topBar = {
@@ -132,27 +138,39 @@ fun LeccionInversionesScreen(onVolver: () -> Unit, onAprobado: () -> Unit = {}) 
                         Text(if (correctas >= 4) "¡Evaluación aprobada!" else "Puedes intentarlo nuevamente", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Text("$correctas de 5 respuestas correctas · ${correctas * 20}%", fontSize = 15.sp)
                         Spacer(Modifier.height(8.dp))
-                        Text(if (correctas >= 4) "Aprobaste la evaluación. Guarda tu resultado en Firebase para que quede registrado." else "Repasa la lección y vuelve a responder.", fontSize = 13.sp)
+                        Text(if (correctas >= 4) "Aprobaste la evaluación. Registra tu resultado para actualizar la misión." else "Repasa la lección y vuelve a responder.", fontSize = 13.sp)
                     }
                 }
                 Spacer(Modifier.height(12.dp))
                 if (!guardado) {
                     Button(onClick = { guardarResultado() }, enabled = !guardando, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = VerdeLeccion)) {
-                        Text(if (guardando) "Guardando..." else "Guardar resultado en Firebase")
+                        Text(if (guardando) "Guardando..." else "Registrar resultado")
                     }
                 } else {
-                    Text("Resultado guardado correctamente en Firestore.", color = VerdeLeccion)
+                    Text("Resultado registrado correctamente en el servidor.", color = VerdeLeccion)
+                    if (correctas >= 4) {
+                        Text(
+                            when {
+                                xpOtorgados > 0 -> "¡Ganaste $xpOtorgados XP!"
+                                recompensaYaOtorgada -> "Ya habías recibido los XP de esta misión."
+                                else -> "Misión aprobada."
+                            },
+                            color = VerdeLeccion
+                        )
+                    }
                     Spacer(Modifier.height(8.dp))
                     if (correctas >= 4) {
                         Button(onClick = onAprobado, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = VerdeLeccion)) { Text("Volver a Mis Misiones") }
                     }
                 }
                 errorGuardado?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                if (correctas < 4) {
+                if (correctas < 4 && guardado) {
                     OutlinedButton(onClick = {
                         resultado = null
                         guardado = false
                         errorGuardado = null
+                        xpOtorgados = 0
+                        recompensaYaOtorgada = false
                         for (i in respuestas.indices) respuestas[i] = null
                     }, modifier = Modifier.fillMaxWidth()) { Text("Volver a intentar") }
                 }

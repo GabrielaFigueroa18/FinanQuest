@@ -1,4 +1,3 @@
-
 package com.finanquest.sv.ui.misiones
 
 import android.util.Log
@@ -11,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,7 +39,8 @@ private data class Mision(
     val xp: Int,
     val progreso: Int,
     val icono: ImageVector,
-    val detalle: String
+    val detalle: String,
+    val recompensaConfirmada: Boolean = false
 )
 
 // Catálogo inicial local; el progreso de cada usuario se consulta en Firestore.
@@ -83,6 +84,8 @@ fun MisionesScreen(
     var progresos by remember(uid) { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var cargandoMisiones by remember(uid) { mutableStateOf(uid != null) }
     var errorMisiones by remember(uid) { mutableStateOf<String?>(null) }
+    var recompensasConfirmadas by remember(uid) { mutableStateOf<Set<String>>(emptySet()) }
+    var errorRecompensas by remember(uid) { mutableStateOf(false) }
 
     DisposableEffect(uid) {
         if (uid == null) {
@@ -116,12 +119,34 @@ fun MisionesScreen(
                         } ?: emptyMap()
                     }
                 }
-            onDispose { registro.remove() }
+            // Las recompensas solo se consideran entregadas cuando existe
+            // el registro correspondiente creado por el backend.
+            val registroRecompensas = FirebaseFirestore.getInstance()
+                .collection("usuarios")
+                .document(uid)
+                .collection("recompensas_otorgadas")
+                .addSnapshotListener { instantanea, error ->
+                    if (error != null) {
+                        errorRecompensas = true
+                        Log.w("MISIONES_DEBUG", "No se pudo verificar recompensas", error)
+                    } else {
+                        errorRecompensas = false
+                        recompensasConfirmadas = instantanea?.documents
+                            ?.map { it.id }?.toSet() ?: emptySet()
+                    }
+                }
+            onDispose {
+                registro.remove()
+                registroRecompensas.remove()
+            }
         }
     }
 
     val misiones = misionesDemo.map { mision ->
-        mision.copy(progreso = progresos[mision.id] ?: 0)
+        mision.copy(
+            progreso = progresos[mision.id] ?: 0,
+            recompensaConfirmada = mision.id in recompensasConfirmadas
+        )
     }
 
     val visibles = misiones.filter {
@@ -232,6 +257,14 @@ fun MisionesScreen(
                 Text(error, color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
+            if (errorRecompensas) {
+                Text(
+                    "No se pudo verificar si los XP fueron entregados.",
+                    color = Gris,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                )
+            }
             if (visibles.isEmpty()) {
                 Text(
                     if (pestana == 1) "Todavía no tienes misiones completadas."
@@ -281,7 +314,14 @@ fun MisionesScreen(
                     Text(mision.detalle)
                     Spacer(Modifier.height(12.dp))
                     Text("Progreso registrado: ${mision.progreso}%")
-                    Text("Recompensa prevista: +${mision.xp} XP", color = Verde)
+                    Text(
+                        when {
+                            mision.recompensaConfirmada -> "Recompensa registrada: +${mision.xp} XP"
+                            mision.progreso == 100 -> "Recompensa pendiente de confirmar: +${mision.xp} XP"
+                            else -> "Recompensa prevista: +${mision.xp} XP"
+                        },
+                        color = Verde
+                    )
                 }
             },
             confirmButton = {
@@ -342,7 +382,16 @@ private fun TarjetaMision(mision: Mision, onDetalle: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("🎁", fontSize = 21.sp)
                 Spacer(Modifier.width(10.dp))
-                Text("Recompensa de XP", color = Texto, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                Text(
+                    when {
+                        mision.recompensaConfirmada -> "XP registrados"
+                        mision.progreso == 100 -> "XP sin confirmar"
+                        else -> "Recompensa de XP"
+                    },
+                    color = Texto,
+                    fontSize = 12.sp,
+                    modifier = Modifier.weight(1f)
+                )
                 TextButton(onClick = onDetalle, contentPadding = PaddingValues(0.dp)) {
                     Text("VER DETALLES", color = Verde, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Icon(Icons.Filled.ChevronRight, null, tint = Verde, modifier = Modifier.size(16.dp))
@@ -374,3 +423,4 @@ private fun RowScope.ItemInferior(
         )
     )
 }
+
