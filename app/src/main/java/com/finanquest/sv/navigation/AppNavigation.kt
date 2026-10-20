@@ -1,4 +1,5 @@
 package com.finanquest.sv.navigation
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -14,28 +15,16 @@ import com.finanquest.sv.ui.misiones.LeccionInversionesScreen
 import com.finanquest.sv.viewmodel.AuthViewModel
 
 private enum class Pantalla {
-    BIENVENIDA,
-    LOGIN,
-    REGISTRO,
-    DASHBOARD,
-    PERFIL,
-    INFORMACION_PERSONAL,
-    SEGURIDAD,
-    MISIONES,
-    LECCION_INVERSIONES
+    BIENVENIDA, LOGIN, REGISTRO, DASHBOARD, PERFIL,
+    INFORMACION_PERSONAL, SEGURIDAD, MISIONES, LECCION_INVERSIONES
 }
 
 @Composable
-fun AppNavigation(
-    authViewModel: AuthViewModel = viewModel()
-) {
+fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
     var pantalla by remember {
         mutableStateOf(
-            if (authViewModel.sesionIniciada) {
-                Pantalla.DASHBOARD
-            } else {
-                Pantalla.BIENVENIDA
-            }
+            if (authViewModel.sesionIniciada) Pantalla.DASHBOARD
+            else Pantalla.BIENVENIDA
         )
     }
 
@@ -49,22 +38,15 @@ fun AppNavigation(
                 pantalla == Pantalla.LECCION_INVERSIONES
     ) {
         authViewModel.limpiarMensaje()
-
         pantalla = when (pantalla) {
-            Pantalla.INFORMACION_PERSONAL,
-            Pantalla.SEGURIDAD -> Pantalla.PERFIL
-
+            Pantalla.INFORMACION_PERSONAL, Pantalla.SEGURIDAD -> Pantalla.PERFIL
             Pantalla.LECCION_INVERSIONES -> Pantalla.MISIONES
-
-            Pantalla.PERFIL,
-            Pantalla.MISIONES -> Pantalla.DASHBOARD
-
+            Pantalla.PERFIL, Pantalla.MISIONES -> Pantalla.DASHBOARD
             else -> Pantalla.BIENVENIDA
         }
     }
 
     when (pantalla) {
-
         Pantalla.BIENVENIDA -> BienvenidaScreen(
             onIniciarSesion = {
                 authViewModel.limpiarMensaje()
@@ -75,12 +57,9 @@ fun AppNavigation(
                 pantalla = Pantalla.REGISTRO
             }
         )
-
         Pantalla.LOGIN -> LoginScreen(
             viewModel = authViewModel,
-            onLoginExitoso = {
-                pantalla = Pantalla.DASHBOARD
-            },
+            onLoginExitoso = { pantalla = Pantalla.DASHBOARD },
             onIrRegistro = {
                 authViewModel.limpiarMensaje()
                 pantalla = Pantalla.REGISTRO
@@ -90,12 +69,9 @@ fun AppNavigation(
                 pantalla = Pantalla.BIENVENIDA
             }
         )
-
         Pantalla.REGISTRO -> RegistroScreen(
             viewModel = authViewModel,
-            onRegistroExitoso = {
-                pantalla = Pantalla.DASHBOARD
-            },
+            onRegistroExitoso = { pantalla = Pantalla.DASHBOARD },
             onIrLogin = {
                 authViewModel.limpiarMensaje()
                 pantalla = Pantalla.LOGIN
@@ -105,22 +81,14 @@ fun AppNavigation(
                 pantalla = Pantalla.BIENVENIDA
             }
         )
-
         Pantalla.DASHBOARD -> DashboardScreen(
             authViewModel = authViewModel,
-            onPerfil = {
-                pantalla = Pantalla.PERFIL
-            },
-            onMisiones = {
-                pantalla = Pantalla.MISIONES
-            }
+            onPerfil = { pantalla = Pantalla.PERFIL },
+            onMisiones = { pantalla = Pantalla.MISIONES }
         )
-
         Pantalla.PERFIL -> PerfilScreen(
             authViewModel = authViewModel,
-            onVolver = {
-                pantalla = Pantalla.DASHBOARD
-            },
+            onVolver = { pantalla = Pantalla.DASHBOARD },
             onInformacionPersonal = {
                 authViewModel.limpiarMensaje()
                 pantalla = Pantalla.INFORMACION_PERSONAL
@@ -134,51 +102,29 @@ fun AppNavigation(
                 pantalla = Pantalla.BIENVENIDA
             }
         )
-
         Pantalla.INFORMACION_PERSONAL -> InformacionPersonalScreen(
             authViewModel = authViewModel,
-            onVolver = {
-                pantalla = Pantalla.PERFIL
-            },
+            onVolver = { pantalla = Pantalla.PERFIL },
             onGuardarDatos = { nombre, universidad ->
                 authViewModel.actualizarDatosPersonales(
                     nombre = nombre,
                     universidad = universidad,
-                    onExito = {
-                        pantalla = Pantalla.PERFIL
-                    }
+                    onExito = { pantalla = Pantalla.PERFIL }
                 )
             }
         )
-
         Pantalla.SEGURIDAD -> SeguridadScreen(
-            onVolver = {
-                pantalla = Pantalla.PERFIL
-            }
+            onVolver = { pantalla = Pantalla.PERFIL }
         )
-
         Pantalla.MISIONES -> MisionesScreen(
-            onVolver = {
-                pantalla = Pantalla.DASHBOARD
-            },
-            onInicio = {
-                pantalla = Pantalla.DASHBOARD
-            },
-            onPerfil = {
-                pantalla = Pantalla.PERFIL
-            },
-            onAbrirLeccionInversiones = {
-                pantalla = Pantalla.LECCION_INVERSIONES
-            }
+            onVolver = { pantalla = Pantalla.DASHBOARD },
+            onInicio = { pantalla = Pantalla.DASHBOARD },
+            onPerfil = { pantalla = Pantalla.PERFIL },
+            onAbrirLeccionInversiones = { pantalla = Pantalla.LECCION_INVERSIONES }
         )
-
         Pantalla.LECCION_INVERSIONES -> LeccionInversionesScreen(
-            onVolver = {
-                pantalla = Pantalla.MISIONES
-            },
-            onAprobado = {
-                pantalla = Pantalla.MISIONES
-            }
+            onVolver = { pantalla = Pantalla.MISIONES },
+            onAprobado = { pantalla = Pantalla.MISIONES }
         )
     }
 }
