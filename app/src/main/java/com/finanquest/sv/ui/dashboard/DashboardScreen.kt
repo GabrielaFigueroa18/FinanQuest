@@ -28,6 +28,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finanquest.sv.viewmodel.AuthViewModel
+import com.finanquest.sv.viewmodel.CuentaViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.finanquest.sv.viewmodel.MovimientoViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Locale
@@ -71,6 +74,9 @@ fun DashboardScreen(
     }
 
     val usuario = authViewModel.usuario
+    val cuentaViewModel: CuentaViewModel = viewModel()
+    val movimientoViewModel: MovimientoViewModel = viewModel()
+    LaunchedEffect(Unit) { cuentaViewModel.observar(); movimientoViewModel.observar() }
 
     val primerNombre = usuario?.nombre
         ?.trim()
@@ -105,11 +111,9 @@ fun DashboardScreen(
     val nivel = progresoActual?.second ?: (usuario?.nivel ?: 1)
     val xp = progresoActual?.first ?: (usuario?.xp ?: 0)
 
-    // DATOS DE DEMOSTRACIÓN
-    // Luego se reemplazarán por datos reales de Firebase.
-    val ingresos = 2400.00
-    val gastos = 1154.50
-    val saldo = ingresos - gastos
+    val ingresos = movimientoViewModel.movimientos.filter { it.tipo == "Ingreso" }.sumOf { it.monto }
+    val gastos = movimientoViewModel.movimientos.filter { it.tipo == "Gasto" }.sumOf { it.monto }
+    val saldo = cuentaViewModel.cuentas.filter { it.activa }.sumOf { it.saldo }
 
     Scaffold(
         containerColor = Fondo,
