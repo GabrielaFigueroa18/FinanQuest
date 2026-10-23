@@ -21,6 +21,7 @@ import com.finanquest.sv.data.model.Cuenta
 import com.finanquest.sv.data.model.Movimiento
 import com.finanquest.sv.viewmodel.CuentaViewModel
 import com.finanquest.sv.viewmodel.MovimientoViewModel
+import com.finanquest.sv.viewmodel.PresupuestoViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,7 +73,8 @@ fun MovimientosScreen(onInicio: () -> Unit, onCuentas: () -> Unit, onNuevo: () -
 
 @Composable
 fun NuevoMovimientoScreen(onVolver: () -> Unit, onExito: () -> Unit, onInicio: () -> Unit, onCuentas: () -> Unit, vm: MovimientoViewModel = viewModel()) {
-    LaunchedEffect(Unit) { vm.observar(); vm.limpiarMensaje() }
+    val presupuestoViewModel: PresupuestoViewModel = viewModel()
+    LaunchedEffect(Unit) { vm.observar(); vm.limpiarMensaje(); presupuestoViewModel.observar() }
     var tipo by remember { mutableStateOf("Gasto") }
     var monto by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
@@ -100,7 +102,7 @@ fun NuevoMovimientoScreen(onVolver: () -> Unit, onExito: () -> Unit, onInicio: (
                     Text(categoria.ifBlank { "Seleccionar categoría" }); Spacer(Modifier.weight(1f)); Icon(Icons.Filled.ArrowDropDown, null)
                 }
                 DropdownMenu(menuCat, { menuCat = false }) {
-                    (if (tipo == "Gasto") listOf("Comida", "Transporte", "Compras", "Educación", "Vivienda", "Salud", "Entretenimiento", "Otros") else listOf("Salario", "Beca", "Apoyo familiar", "Venta", "Reembolso", "Otros"))
+                    (if (tipo == "Gasto") (listOf("Comida", "Transporte", "Compras", "Educación", "Vivienda", "Salud", "Entretenimiento", "Otros") + presupuestoViewModel.categorias.map { it.nombre }).distinct() else listOf("Salario", "Beca", "Apoyo familiar", "Venta", "Reembolso", "Otros"))
                         .forEach { DropdownMenuItem(text = { Text(it) }, onClick = { categoria = it; menuCat = false }) }
                 }
             }

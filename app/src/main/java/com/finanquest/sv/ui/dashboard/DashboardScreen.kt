@@ -27,10 +27,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.finanquest.sv.data.model.Movimiento
+import com.finanquest.sv.utils.FinanzasIntegrante2
 import com.finanquest.sv.viewmodel.AuthViewModel
 import com.finanquest.sv.viewmodel.CuentaViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.finanquest.sv.viewmodel.MovimientoViewModel
+import com.finanquest.sv.viewmodel.MetaViewModel
+import com.finanquest.sv.viewmodel.PresupuestoViewModel
+import java.util.Calendar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Locale
@@ -45,9 +50,9 @@ private val Texto = Color(0xFF22252B)
 private val Gris = Color(0xFF7B808A)
 private val Borde = Color(0xFFE5E7EB)
 
-private fun formatoDinero(valor: Double): String {
-    return String.format(Locale.US, "$%,.2f", valor)
-}
+private fun formatoDinero(valor: Double): String = String.format(Locale.US, "$%,.2f", valor)
+
+private fun rachaMovimientos(movimientos: List<Movimiento>): Int = FinanzasIntegrante2.racha(movimientos)
 
 @Composable
 fun DashboardScreen(
@@ -76,7 +81,9 @@ fun DashboardScreen(
     val usuario = authViewModel.usuario
     val cuentaViewModel: CuentaViewModel = viewModel()
     val movimientoViewModel: MovimientoViewModel = viewModel()
-    LaunchedEffect(Unit) { cuentaViewModel.observar(); movimientoViewModel.observar() }
+    val metasViewModel: MetaViewModel = viewModel()
+    val presupuestoViewModel: PresupuestoViewModel = viewModel()
+    LaunchedEffect(Unit) { cuentaViewModel.observar(); movimientoViewModel.observar(); metasViewModel.observar(); presupuestoViewModel.observar() }
 
     val primerNombre = usuario?.nombre
         ?.trim()
@@ -114,6 +121,16 @@ fun DashboardScreen(
     val ingresos = movimientoViewModel.movimientos.filter { it.tipo == "Ingreso" }.sumOf { it.monto }
     val gastos = movimientoViewModel.movimientos.filter { it.tipo == "Gasto" }.sumOf { it.monto }
     val saldo = cuentaViewModel.cuentas.filter { it.activa }.sumOf { it.saldo }
+    val primerDiaMes = Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
+    val metasActivas = metasViewModel.metas.count { !it.completada }
+    val presupuestoConAlerta = presupuestoViewModel.presupuestos.firstOrNull { p ->
+        val categoria = presupuestoViewModel.categorias.firstOrNull { it.id == p.categoriaId }
+        val alertasActivas = categoria?.alertasActivas ?: true
+        val umbral = categoria?.umbral ?: p.alertaUmbral
+        p.activo && alertasActivas && p.limite > 0 && presupuestoViewModel.gasto(p.categoria, p.inicioPeriodo) / p.limite >= umbral
+    }
+    val gastoCategoria = presupuestoConAlerta?.let { presupuestoViewModel.gasto(it.categoria, it.inicioPeriodo) } ?: 0.0
+    val porcentajeAlerta = presupuestoConAlerta?.let { ((gastoCategoria / it.limite) * 100).toInt() } ?: 0
 
     Scaffold(
         containerColor = Fondo,
@@ -173,21 +190,22 @@ fun DashboardScreen(
             Spacer(Modifier.height(18.dp))
 
             ResumenGamificacion(
-                racha = 12,
-                metas = 3,
+                racha = rachaMovimientos(movimientoViewModel.movimientos),
+                metas = metasActivas,
                 nivel = nivel
             )
 
             Spacer(Modifier.height(20.dp))
 
-            AlertaPresupuesto(
-                texto = "Has superado el 80% de tu presupuesto en Alimentación.",
-                onClick = onPresupuestos
-            )
+            if (presupuestoConAlerta != null) {
+                AlertaPresupuesto(
+                    texto = "${presupuestoConAlerta.categoria}: llevas $porcentajeAlerta% de tu presupuesto.",
+                    onClick = onPresupuestos
+                )
+                Spacer(Modifier.height(18.dp))
+            }
 
-            Spacer(Modifier.height(18.dp))
 
-            TarjetaMision(onClick = onMisiones)
 
             Spacer(Modifier.height(24.dp))
 
@@ -214,7 +232,7 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            ResumenPresupuestos()
+            ResumenPresupuestos(presupuestoViewModel.presupuestos, presupuestoViewModel::gasto)
 
             Spacer(Modifier.height(20.dp))
 
@@ -347,41 +365,53 @@ private fun MensajeMascota(
     nivel: Int,
     xp: Int
 ) {
-    Row(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        shape = RoundedCornerShape(22.dp),
+        color = Color(0xFFF0EBFA),
+        border = BorderStroke(1.dp, Color(0xFFE3D8F5))
     ) {
-
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFEDE9FE)),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "🐱",
-                fontSize = 42.sp
-            )
+            MascotaQuest(modifier = Modifier.size(67.dp))
+            Spacer(Modifier.width(13.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Tu compañera de ahorro", color = Morado, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    "Te faltan ${100 - (xp.coerceAtLeast(0) % 100)} XP para llegar al nivel ${nivel + 1}. ¡Vas bien!",
+                    fontSize = 13.sp, lineHeight = 18.sp, color = Texto, fontWeight = FontWeight.Medium
+                )
+            }
         }
+    }
+}
 
-        Spacer(Modifier.width(10.dp))
-
-        Surface(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(17.dp),
-            color = Color.White,
-            border = BorderStroke(1.dp, Borde),
-            shadowElevation = 2.dp
-        ) {
-            Text(
-                text = "¡Te faltan ${100 - (xp.coerceAtLeast(0) % 100)} XP para subir al Nivel ${nivel + 1}! ¡Sigue así!",
-                modifier = Modifier.padding(12.dp),
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
-                color = Texto
-            )
+@Composable
+private fun MascotaQuest(modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val s = size.minDimension
+        val x = (size.width - s) / 2f
+        val y = (size.height - s) / 2f
+        fun p(px: Float, py: Float) = androidx.compose.ui.geometry.Offset(x + px * s, y + py * s)
+        drawCircle(Color(0xFFDCD0F1), s * .47f, p(.5f, .53f))
+        // Rounded, hand-drawn-inspired fox face, using the app's violet and warm accent.
+        val face = androidx.compose.ui.graphics.Path().apply {
+            moveTo(x + .18f*s, y + .37f*s); quadraticBezierTo(x + .08f*s, y + .06f*s, x + .39f*s, y + .25f*s)
+            quadraticBezierTo(x + .5f*s, y + .19f*s, x + .61f*s, y + .25f*s)
+            quadraticBezierTo(x + .92f*s, y + .06f*s, x + .82f*s, y + .37f*s)
+            quadraticBezierTo(x + .95f*s, y + .83f*s, x + .5f*s, y + .86f*s)
+            quadraticBezierTo(x + .05f*s, y + .83f*s, x + .18f*s, y + .37f*s)
+            close()
         }
+        drawPath(face, Color(0xFF7653B5))
+        drawCircle(Color(0xFFFFE8C8), s*.27f, p(.5f,.59f))
+        drawCircle(Color.White, s*.045f, p(.37f,.48f)); drawCircle(Color.White, s*.045f, p(.63f,.48f))
+        drawCircle(Color(0xFF38294D), s*.023f, p(.38f,.49f)); drawCircle(Color(0xFF38294D), s*.023f, p(.62f,.49f))
+        drawCircle(Color(0xFFE7A54B), s*.038f, p(.5f,.58f))
+        drawCircle(Color(0xFFF0A5A0), s*.045f, p(.25f,.59f)); drawCircle(Color(0xFFF0A5A0), s*.045f, p(.75f,.59f))
     }
 }
 
@@ -393,12 +423,12 @@ private fun TarjetaSaldo(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = Verde
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
+            defaultElevation = 1.dp
         )
     ) {
         Column(
@@ -745,40 +775,19 @@ private fun BarraProgreso(
 }
 
 @Composable
-private fun ResumenPresupuestos() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(17.dp),
-        color = Fondo
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-
-            FilaPresupuesto(
-                nombre = "ALIMENTACIÓN",
-                porcentaje = 85,
-                limite = 200.00,
-                color = Rojo
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            FilaPresupuesto(
-                nombre = "TRANSPORTE",
-                porcentaje = 40,
-                limite = 80.00,
-                color = Verde
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            FilaPresupuesto(
-                nombre = "SUSCRIPCIONES",
-                porcentaje = 15,
-                limite = 50.00,
-                color = Azul
-            )
+private fun ResumenPresupuestos(presupuestos: List<com.finanquest.sv.data.model.Presupuesto>, gasto: (String, Long) -> Double) {
+    if (presupuestos.isEmpty()) {
+        Text("Aún no tienes presupuestos. Crea uno para ver aquí tu avance.", color = Gris, fontSize = 12.sp)
+        return
+    }
+    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(17.dp), color = Fondo) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            presupuestos.filter { it.activo }.take(3).forEachIndexed { index, p ->
+                val usado = gasto(p.categoria, p.inicioPeriodo)
+                val porcentaje = if (p.limite > 0) (usado / p.limite * 100).toInt().coerceIn(0, 100) else 0
+                FilaPresupuesto(p.categoria.uppercase(), porcentaje, p.limite, if (porcentaje >= (p.alertaUmbral * 100).toInt()) Rojo else Verde)
+                if (index < minOf(2, presupuestos.count { it.activo } - 1)) Spacer(Modifier.height(16.dp))
+            }
         }
     }
 }
@@ -934,7 +943,7 @@ private fun MenuInferiorDashboard(
             texto = "Inicio",
             icono = Icons.Filled.Home,
             seleccionado = true,
-            onClick = {}
+            onClick = onMetas
         )
 
         ItemMenu(
@@ -1008,3 +1017,5 @@ private fun RowScope.ItemMenu(
         )
     )
 }
+
+

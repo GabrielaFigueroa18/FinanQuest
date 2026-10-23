@@ -4,10 +4,18 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.finanquest.sv.data.model.Cuenta
+import com.finanquest.sv.data.model.MetaAhorro
 import com.finanquest.sv.ui.bienvenida.BienvenidaScreen
 import com.finanquest.sv.ui.login.LoginScreen
 import com.finanquest.sv.ui.registro.RegistroScreen
 import com.finanquest.sv.ui.dashboard.DashboardScreen
+import com.finanquest.sv.ui.metas.MetasScreen
+import com.finanquest.sv.ui.metas.CrearMetaScreen
+import com.finanquest.sv.ui.metas.DetalleMetaScreen
+import com.finanquest.sv.ui.presupuestos.PresupuestosScreen
+import com.finanquest.sv.ui.presupuestos.CategoriasAlertasScreen
+import com.finanquest.sv.ui.presupuestos.CrearPresupuestoScreen
+import com.finanquest.sv.ui.reportes.ReportesScreen
 import com.finanquest.sv.ui.perfil.PerfilScreen
 import com.finanquest.sv.ui.perfil.InformacionPersonalScreen
 import com.finanquest.sv.ui.perfil.SeguridadScreen
@@ -16,9 +24,11 @@ import com.finanquest.sv.ui.misiones.LeccionInversionesScreen
 import com.finanquest.sv.ui.finanzas.*
 import com.finanquest.sv.viewmodel.AuthViewModel
 import com.finanquest.sv.viewmodel.CuentaViewModel
+import com.finanquest.sv.viewmodel.MetaViewModel
+import com.finanquest.sv.viewmodel.PresupuestoViewModel
 
 private enum class Pantalla {
-    BIENVENIDA, LOGIN, REGISTRO, DASHBOARD, PERFIL,
+    BIENVENIDA, LOGIN, REGISTRO, DASHBOARD, PERFIL, METAS, NUEVA_META, DETALLE_META, PRESUPUESTOS, CATEGORIAS, CREAR_PRESUPUESTO, REPORTES,
     INFORMACION_PERSONAL, SEGURIDAD, MISIONES, LECCION_INVERSIONES,
     MOVIMIENTOS, NUEVO_MOVIMIENTO, CUENTAS, CREAR_CUENTA, DETALLE_CUENTA, EDITAR_CUENTA
 }
@@ -27,6 +37,9 @@ private enum class Pantalla {
 fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
     var pantalla by remember { mutableStateOf(if (authViewModel.sesionIniciada) Pantalla.DASHBOARD else Pantalla.BIENVENIDA) }
     var cuentaSeleccionada by remember { mutableStateOf<Cuenta?>(null) }
+    var metaSeleccionada by remember { mutableStateOf<MetaAhorro?>(null) }
+    val metaViewModel: MetaViewModel = viewModel()
+    val presupuestoViewModel: PresupuestoViewModel = viewModel()
     val cuentaViewModel: CuentaViewModel = viewModel()
 
     BackHandler(enabled = pantalla != Pantalla.BIENVENIDA && pantalla != Pantalla.DASHBOARD) {
@@ -38,7 +51,11 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
             Pantalla.CREAR_CUENTA -> Pantalla.CUENTAS
             Pantalla.EDITAR_CUENTA -> Pantalla.DETALLE_CUENTA
             Pantalla.DETALLE_CUENTA -> Pantalla.CUENTAS
-            Pantalla.PERFIL, Pantalla.MISIONES, Pantalla.MOVIMIENTOS, Pantalla.CUENTAS -> Pantalla.DASHBOARD
+            Pantalla.DETALLE_META -> Pantalla.METAS
+            Pantalla.NUEVA_META -> Pantalla.METAS
+            Pantalla.CATEGORIAS, Pantalla.CREAR_PRESUPUESTO -> Pantalla.PRESUPUESTOS
+            Pantalla.PRESUPUESTOS, Pantalla.REPORTES -> Pantalla.DASHBOARD
+            Pantalla.METAS, Pantalla.PERFIL, Pantalla.MISIONES, Pantalla.MOVIMIENTOS, Pantalla.CUENTAS -> Pantalla.DASHBOARD
             else -> Pantalla.BIENVENIDA
         }
     }
@@ -62,8 +79,20 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
             onCuentas = { pantalla = Pantalla.CUENTAS },
             onPerfil = { pantalla = Pantalla.PERFIL },
             onMisiones = { pantalla = Pantalla.MISIONES },
-            onNuevoGasto = { pantalla = Pantalla.NUEVO_MOVIMIENTO }
+            onNuevoGasto = { pantalla = Pantalla.NUEVO_MOVIMIENTO },
+            onMetas = { pantalla = Pantalla.METAS },
+            onNuevaMeta = { pantalla = Pantalla.NUEVA_META },
+            onPresupuestos = { pantalla = Pantalla.PRESUPUESTOS },
+            onNuevaCategoria = { pantalla = Pantalla.CATEGORIAS },
+            onReportes = { pantalla = Pantalla.REPORTES }
         )
+        Pantalla.METAS -> MetasScreen(onVolver = { pantalla = Pantalla.DASHBOARD }, onNuevaMeta = { pantalla = Pantalla.NUEVA_META }, onDetalle = { metaSeleccionada = it; pantalla = Pantalla.DETALLE_META }, vm = metaViewModel)
+        Pantalla.NUEVA_META -> CrearMetaScreen(onVolver = { pantalla = Pantalla.METAS }, vm = metaViewModel, onCrear = { nombre, objetivo, inicial, fecha, icono -> metaViewModel.crear(nombre, objetivo, inicial, fecha, icono) { pantalla = Pantalla.METAS } })
+        Pantalla.DETALLE_META -> metaSeleccionada?.let { DetalleMetaScreen(meta = it, onVolver = { pantalla = Pantalla.METAS }, vm = metaViewModel) } ?: run { pantalla = Pantalla.METAS }
+        Pantalla.PRESUPUESTOS -> PresupuestosScreen(onVolver = { pantalla = Pantalla.DASHBOARD }, onCrear = { pantalla = Pantalla.CREAR_PRESUPUESTO }, onCategorias = { pantalla = Pantalla.CATEGORIAS }, onReportes = { pantalla = Pantalla.REPORTES }, vm = presupuestoViewModel)
+        Pantalla.CATEGORIAS -> CategoriasAlertasScreen(onVolver = { pantalla = Pantalla.PRESUPUESTOS }, vm = presupuestoViewModel, onGuardarCategoria = { nombre, limite, umbral -> presupuestoViewModel.guardarCategoria(nombre, limite, umbral) {} })
+        Pantalla.CREAR_PRESUPUESTO -> CrearPresupuestoScreen(onVolver = { pantalla = Pantalla.PRESUPUESTOS }, vm = presupuestoViewModel, onGuardar = { categoria, limite, periodo -> presupuestoViewModel.guardarPresupuesto(categoria, limite, periodo) { pantalla = Pantalla.PRESUPUESTOS } })
+        Pantalla.REPORTES -> ReportesScreen(onVolver = { pantalla = Pantalla.DASHBOARD }, onMovimientos = { pantalla = Pantalla.MOVIMIENTOS })
         Pantalla.MOVIMIENTOS -> MovimientosScreen(
             onInicio = { pantalla = Pantalla.DASHBOARD },
             onCuentas = { pantalla = Pantalla.CUENTAS },
