@@ -195,7 +195,7 @@ fun DashboardScreen(
             mapOf(
                 "primer_ahorro_semanal" to "Ahorra al menos $5.00 durante la semana.",
                 "maestro_presupuesto" to
-                    "Completa el módulo educativo sobre presupuestos universitarios.",
+                        "Completa el módulo educativo sobre presupuestos universitarios.",
                 "inversionista_novato" to "Aprende sobre inversiones y supera la evaluación.",
                 "primer_movimiento" to "Registra tu primer ingreso o gasto.",
                 "organizador_financiero" to "Registra cinco movimientos financieros.",
@@ -270,24 +270,6 @@ fun DashboardScreen(
                     metas = metasActivas,
                     nivel = nivel,
                 )
-            MensajeMascota(nivel = nivel, xp = xp, onClick = onMisiones)
-
-            Spacer(Modifier.height(20.dp))
-
-            TarjetaSaldo(
-                saldo = saldo,
-                ingresos = ingresos,
-                gastos = gastos
-            )
-
-            Spacer(Modifier.height(18.dp))
-
-            ResumenGamificacion(
-                racha = rachaMovimientos(movimientoViewModel.movimientos),
-                metas = metasActivas,
-                nivel = nivel
-            )
-
                 Spacer(Modifier.height(20.dp))
 
                 if (presupuestoConAlerta != null) {
@@ -344,20 +326,13 @@ fun DashboardScreen(
 
                 Spacer(Modifier.height(20.dp))
 
-            AccionesRapidas(
-                onNuevoGasto = onNuevoGasto,
-                onNuevaMeta = onNuevaMeta,
-                onNuevaCategoria = onNuevaCategoria,
-                onReportes = onReportes,
-                onPresupuestos = onPresupuestos,
-                onNoticias = onNoticias
-            )
                 AccionesRapidas(
                     onNuevoGasto = onNuevoGasto,
                     onNuevaMeta = onNuevaMeta,
                     onNuevaCategoria = onNuevaCategoria,
                     onReportes = onReportes,
                     onPresupuestos = onPresupuestos,
+                    onNoticias = onNoticias,
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -882,7 +857,8 @@ private fun AccionesRapidas(
     onNuevaMeta: () -> Unit,
     onNuevaCategoria: () -> Unit,
     onReportes: () -> Unit,
-    onPresupuestos: () -> Unit
+    onPresupuestos: () -> Unit,
+    onNoticias: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
