@@ -428,41 +428,170 @@ fun NuevoMovimientoScreen(
 
 
 @Composable
-fun CuentasScreen(onInicio: () -> Unit, onMovimientos: () -> Unit, onCrear: () -> Unit, onDetalle: (Cuenta) -> Unit, vm: CuentaViewModel = viewModel()) {
-    LaunchedEffect(Unit) { vm.observar() }
-    Scaffold(containerColor = fondo, topBar = { TopBar("FinanQuest SV", onInicio) },
-        floatingActionButton = { ExtendedFloatingActionButton(onClick = onCrear, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Nueva") }, containerColor = verde, contentColor = Color.White) }) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad).padding(horizontal = 18.dp)) {
-            Text("Mis cuentas", Modifier.padding(top = 10.dp), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = tinta)
-            Card(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 12.dp), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(Modifier.fillMaxWidth().padding(17.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("SALDO TOTAL", fontSize = 11.sp, color = gris, fontWeight = FontWeight.Bold)
-                    Text(dinero(vm.cuentas.filter { it.activa }.sumOf { it.saldo }), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = morado)
+fun CuentasScreen(
+    onInicio: () -> Unit,
+    onMovimientos: () -> Unit,
+    onCrear: () -> Unit,
+    onDetalle: (Cuenta) -> Unit,
+    vm: CuentaViewModel = viewModel()
+) {
+    LaunchedEffect(vm) { vm.observar() }
+
+    val verdeC = Color(0xFF119F50)
+    val moradoC = Color(0xFF7045B7)
+    val verdeClaroC = Color(0xFFE8F8EF)
+    val moradoClaroC = Color(0xFFF2ECFC)
+    val textoC = Color(0xFF302A40)
+    val grisC = Color(0xFF777381)
+    val cuentasActivas = vm.cuentas.filter { it.activa }
+    val saldoTotal = cuentasActivas.sumOf { it.saldo }
+
+    Scaffold(
+        containerColor = Color(0xFFF8F9FA),
+        topBar = { TopBar("FinanQuest SV", onInicio) }
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Spacer(Modifier.height(4.dp))
+            Text("Mis cuentas", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = textoC)
+            Text("Administra tu dinero con FinanQuest", fontSize = 13.sp, color = grisC)
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = verdeC)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .background(androidx.compose.ui.graphics.Brush.linearGradient(
+                            listOf(Color(0xFF0D9948), Color(0xFF18BB65))
+                        )).padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("SALDO TOTAL DISPONIBLE", fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Medium)
+                            Spacer(Modifier.height(7.dp))
+                            Text(dinero(saldoTotal), fontSize = 30.sp,
+                                fontWeight = FontWeight.Bold, color = Color.White)
+                            Spacer(Modifier.height(5.dp))
+                            Text("${cuentasActivas.size} cuentas activas",
+                                fontSize = 12.sp, color = Color.White)
+                        }
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(
+                                com.finanquest.sv.R.drawable.img
+                            ),
+                            contentDescription = "Mascota FinanQuest",
+                            modifier = Modifier.size(96.dp),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                    }
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.3f))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.VerifiedUser, null, tint = Color.White,
+                            modifier = Modifier.size(19.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Tus finanzas, organizadas en un solo lugar",
+                            fontSize = 12.sp, color = Color.White)
+                    }
                 }
             }
+
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Tus cuentas", Modifier.weight(1f), fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold, color = textoC)
+                Text("${vm.cuentas.size} registradas", color = verdeC, fontSize = 12.sp)
+            }
             vm.mensaje?.let { Aviso(it) }
+
             when {
-                vm.cargando && vm.cuentas.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = verde) }
-                vm.cuentas.isEmpty() -> Vacio("Aún no tienes cuentas", "Crea una cuenta para registrar movimientos.")
-                else -> LazyColumn(contentPadding = PaddingValues(bottom = 85.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    items(vm.cuentas, key = { it.id }) { cuenta ->
-                        Card(Modifier.fillMaxWidth().clickable { onDetalle(cuenta) }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.AccountBalance, null, tint = gris, modifier = Modifier.size(30.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(cuenta.nombre, fontWeight = FontWeight.Bold, color = tinta)
-                                    Text(cuenta.tipo + if (cuenta.activa) " · Activa" else " · Inactiva", fontSize = 12.sp, color = gris)
+                vm.cargando && vm.cuentas.isEmpty() -> {
+                    Box(Modifier.fillMaxWidth().height(130.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = verdeC)
+                    }
+                }
+                vm.cuentas.isEmpty() -> {
+                    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        Column(Modifier.fillMaxWidth().padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Filled.AccountBalanceWallet, null, tint = moradoC,
+                                modifier = Modifier.size(45.dp))
+                            Spacer(Modifier.height(10.dp))
+                            Text("Aún no tienes cuentas", fontWeight = FontWeight.Bold, color = textoC)
+                            Text("Crea tu primera cuenta para organizar tu dinero.",
+                                fontSize = 12.sp, color = grisC)
+                        }
+                    }
+                }
+                else -> vm.cuentas.forEachIndexed { index, cuenta ->
+                    val colorCuenta = if (index % 2 == 0) verdeC else moradoC
+                    val fondoIcono = if (index % 2 == 0) verdeClaroC else moradoClaroC
+                    Card(
+                        modifier = Modifier.fillMaxWidth().clickable { onDetalle(cuenta) },
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(15.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Surface(color = fondoIcono, shape = RoundedCornerShape(15.dp)) {
+                                Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        if (cuenta.tipo.contains("Ahorro", ignoreCase = true))
+                                            Icons.Filled.Savings else Icons.Filled.AccountBalanceWallet,
+                                        null, tint = colorCuenta, modifier = Modifier.size(27.dp)
+                                    )
                                 }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(dinero(cuenta.saldo), fontWeight = FontWeight.Bold, color = tinta)
-                                    Text("Ver detalles", color = verde, fontSize = 11.sp)
-                                }
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(cuenta.nombre, fontWeight = FontWeight.Bold,
+                                    color = textoC, fontSize = 14.sp)
+                                Spacer(Modifier.height(4.dp))
+                                Text("${cuenta.tipo} · ${if (cuenta.activa) "Activa" else "Inactiva"}",
+                                    fontSize = 11.sp, color = grisC)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(dinero(cuenta.saldo), fontWeight = FontWeight.Bold,
+                                    color = textoC, fontSize = 14.sp)
+                                Spacer(Modifier.height(5.dp))
+                                Text("Ver detalles", color = verdeC, fontSize = 11.sp)
                             }
                         }
                     }
                 }
             }
+
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = moradoClaroC)) {
+                Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Lightbulb, null, tint = moradoC,
+                        modifier = Modifier.size(26.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("¡Cada cuenta te acerca a tus metas financieras!",
+                        color = textoC, fontSize = 12.sp, lineHeight = 18.sp)
+                }
+            }
+
+            Button(
+                onClick = onCrear,
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = verdeC),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Filled.AddCircle, null)
+                Spacer(Modifier.width(9.dp))
+                Text("Nueva cuenta", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            }
+            Spacer(Modifier.height(85.dp))
         }
     }
 }
@@ -793,5 +922,6 @@ private fun dateDialog(context: android.content.Context, seleccion: (Long) -> Un
         seleccion(selected.timeInMillis)
     }, today.get(java.util.Calendar.YEAR), today.get(java.util.Calendar.MONTH), today.get(java.util.Calendar.DAY_OF_MONTH)).show()
 }
+
 
 

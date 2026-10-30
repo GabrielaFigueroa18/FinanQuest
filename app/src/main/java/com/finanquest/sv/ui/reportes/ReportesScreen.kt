@@ -1,62 +1,851 @@
+
 package com.finanquest.sv.ui.reportes
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.finanquest.sv.R
 import com.finanquest.sv.viewmodel.MovimientoViewModel
 import com.finanquest.sv.utils.FinanzasIntegrante2
-import java.util.Calendar
 import java.text.NumberFormat
 import java.util.Locale
+import kotlin.math.abs
 
-private val FondoReporte=Color(0xFFF6F7F9)
-private val VerdeReporte=Color(0xFF16B65A)
-private val colores= listOf(Color(0xFF9BDEF2),Color(0xFF20BF69),Color(0xFFE65F91),Color(0xFF8C87E8))
-private data class ItemGasto(val nombre:String,val monto:Double,val porcentaje:Int)
+// =============================================
+// COLORES FINANQUEST
+// =============================================
+
+private val verdeRep = Color(0xFF119F50)
+private val verdeClaroRep = Color(0xFFE8F8EF)
+private val moradoRep = Color(0xFF7045B7)
+private val moradoClaroRep = Color(0xFFF2ECFC)
+private val rojoRep = Color(0xFFE45161)
+private val rojoClaroRep = Color(0xFFFDECEF)
+private val fondoRep = Color(0xFFF8F9FA)
+private val textoRep = Color(0xFF302A40)
+private val grisRep = Color(0xFF777381)
+
+private val coloresGrafico = listOf(
+    Color(0xFF119F50),
+    Color(0xFF7045B7),
+    Color(0xFF8BD7E5),
+    Color(0xFFF3B65F),
+    Color(0xFFE45161)
+)
+
+private data class ItemGasto(
+    val nombre: String,
+    val monto: Double,
+    val porcentaje: Double
+)
+
+private fun monedaReporte(valor: Double): String =
+    NumberFormat.getCurrencyInstance(Locale.US).format(valor)
+
+// =============================================
+// PANTALLA REPORTES
+// =============================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportesScreen(onVolver:()->Unit={},onMovimientos:()->Unit={},onInicio:()->Unit={},vm:MovimientoViewModel=viewModel()){
-    LaunchedEffect(Unit){vm.observar()}
-    var periodo by remember{mutableStateOf("Este mes")};var menu by remember{mutableStateOf(false)};var filtros by remember{mutableStateOf(false)}
-    val desde=FinanzasIntegrante2.inicioPeriodoReporte(periodo)
-    val movimientos=vm.movimientos.filter{it.fecha>=desde}
-    val (ingresos,gastos,ahorro)=FinanzasIntegrante2.totales(movimientos,desde)
-    val items=movimientos.filter{it.tipo.equals("Gasto",true)}.groupBy{it.categoria.ifBlank{"Otros"}}.map{(nombre,lista)->ItemGasto(nombre,lista.sumOf{it.monto},if(gastos>0)(lista.sumOf{it.monto}*100/gastos).toInt()else 0)}.sortedByDescending{it.monto}.take(4)
-    fun dinero(v:Double)=NumberFormat.getCurrencyInstance(Locale("es","SV")).format(v)
-    Scaffold(containerColor=FondoReporte,topBar={CenterAlignedTopAppBar(title={Text("Reportes",fontWeight=FontWeight.Bold,fontSize=22.sp)},navigationIcon={IconButton(onClick=onVolver){Icon(Icons.Default.ArrowBack,"Volver")}},actions={Box{IconButton(onClick={menu=true}){Icon(Icons.Default.MoreVert,"Más opciones")};DropdownMenu(expanded=menu,onDismissRequest={menu=false}){DropdownMenuItem(text={Text("Compartir reporte")},onClick={onMovimientos});DropdownMenuItem(text={Text("Ver movimientos")},onClick=onMovimientos)}}})}){p->
-        Column(Modifier.fillMaxSize().padding(p).verticalScroll(rememberScrollState()).padding(horizontal=18.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
-            Card(colors=CardDefaults.cardColors(containerColor=Color(0xFFEDEDF0)),shape=RoundedCornerShape(18.dp)){Row(Modifier.fillMaxWidth().clickable{filtros=true}.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.CalendarMonth,null,tint=Color(0xFF7C3AED));Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text("PERIODO ACTUAL",fontSize=10.sp,color=Color.Gray,fontWeight=FontWeight.Bold);Text(periodo,fontWeight=FontWeight.SemiBold)};Icon(Icons.Default.FilterList,null,tint=Color(0xFF7C3AED));Text(" Filtrar",color=Color(0xFF7C3AED))}}
-            Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(20.dp)){Column(Modifier.fillMaxWidth().padding(18.dp)){Box(Modifier.fillMaxWidth().height(130.dp),contentAlignment=Alignment.Center){Text("📈",fontSize=72.sp);Text("💵      📊      💰",fontSize=28.sp)};Text("¡Buen trabajo!",color=VerdeReporte,fontWeight=FontWeight.Bold);Text("Ingresos menos gastos en el periodo seleccionado: ${dinero(ahorro)}.",fontWeight=FontWeight.SemiBold)}}
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){Resumen("INGRESOS",dinero(ingresos),Color(0xFFE9F8EE),VerdeReporte,Modifier.weight(1f));Resumen("GASTOS",dinero(gastos),Color(0xFFFFECEF),Color(0xFFD84C5C),Modifier.weight(1f));Resumen("AHORRO",dinero(ahorro),Color(0xFFEAF5FA),Color(0xFF1683A5),Modifier.weight(1f))}
-            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("Distribución de Gastos",Modifier.weight(1f),fontWeight=FontWeight.Bold,fontSize=18.sp);TextButton(onClick=onMovimientos){Text("VER TODO",color=Color(0xFF159BC2),fontWeight=FontWeight.Bold)}}
-            if(vm.cargando&&movimientos.isEmpty()) Box(Modifier.fillMaxWidth().height(130.dp),Alignment.Center){CircularProgressIndicator()}
-            else if(items.isEmpty()) Card(colors=CardDefaults.cardColors(containerColor=Color.White)){Text("No hay gastos en este periodo.",Modifier.padding(18.dp),color=Color.Gray)}
-            else Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(horizontal=16.dp,vertical=18.dp)){Box(Modifier.fillMaxWidth().height(205.dp),contentAlignment=Alignment.Center){Donut(items);Column(horizontalAlignment=Alignment.CenterHorizontally){Text("TOTAL",fontSize=10.sp,color=Color.Gray);Text(dinero(gastos),fontSize=21.sp,fontWeight=FontWeight.Bold)}};Spacer(Modifier.height(14.dp));items.forEachIndexed{index,item->Row(Modifier.fillMaxWidth().clickable{onMovimientos()}.padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(11.dp).background(colores[index%colores.size],RoundedCornerShape(50)));Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(item.nombre);Text("${item.porcentaje}%",fontSize=11.sp,color=Color.Gray)};Text(dinero(item.monto),fontWeight=FontWeight.SemiBold)};if(index<items.lastIndex)HorizontalDivider(color=Color(0xFFE8E8EA))};Spacer(Modifier.height(8.dp));Button(onClick=onMovimientos,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=VerdeReporte),shape=RoundedCornerShape(16.dp)){Text("Ver movimientos",fontWeight=FontWeight.Bold)}}}
-            Card(colors=CardDefaults.cardColors(containerColor=Color(0xFF8050D9)),shape=RoundedCornerShape(20.dp)){Row(Modifier.padding(18.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.TrendingUp,null,tint=Color.White,modifier=Modifier.size(32.dp));Spacer(Modifier.width(12.dp));Column{Text("¡Sigue así!",color=Color.White,fontWeight=FontWeight.Bold,fontSize=16.sp);Text("Revisa la distribución de gastos para decidir cuánto destinar a tus metas.",color=Color.White,fontSize=13.sp)}}}
-            Spacer(Modifier.height(8.dp))
+fun ReportesScreen(
+    onVolver: () -> Unit = {},
+    onMovimientos: () -> Unit = {},
+    onInicio: () -> Unit = {},
+    vm: MovimientoViewModel = viewModel()
+) {
+    LaunchedEffect(vm) {
+        vm.observar()
+    }
+
+    var periodo by remember {
+        mutableStateOf("Este mes")
+    }
+
+    var menu by remember {
+        mutableStateOf(false)
+    }
+
+    var filtros by remember {
+        mutableStateOf(false)
+    }
+
+    val desde = FinanzasIntegrante2.inicioPeriodoReporte(periodo)
+
+    val movimientos = vm.movimientos.filter {
+        it.fecha >= desde
+    }
+
+    val (ingresos, gastos, balance) =
+        FinanzasIntegrante2.totales(movimientos, desde)
+
+    // Agrupar los gastos por categoría.
+    val agrupados = movimientos
+        .filter {
+            it.tipo.equals("Gasto", ignoreCase = true)
+        }
+        .groupBy {
+            it.categoria.ifBlank { "Otros" }
+        }
+        .map { (nombre, lista) ->
+            nombre to lista.sumOf { it.monto }
+        }
+        .filter { it.second > 0.0 }
+        .sortedByDescending { it.second }
+
+    // Mostrar las cuatro categorías mayores y
+    // agrupar las demás en "Otros".
+    val principales = agrupados.take(4)
+    val restantes = agrupados.drop(4).sumOf { it.second }
+
+    val distribucion = buildList {
+        addAll(principales)
+
+        if (restantes > 0.0) {
+            add("Otros" to restantes)
         }
     }
-    if(filtros)AlertDialog(onDismissRequest={filtros=false},title={Text("Selecciona un periodo")},text={Column{listOf("Este mes","Últimos 3 meses","Este año").forEach{nombre->TextButton(onClick={periodo=nombre;filtros=false}){Text(nombre)}}}},confirmButton={TextButton(onClick={filtros=false}){Text("Cerrar")}})
+
+    val totalDistribucion = distribucion.sumOf { it.second }
+
+    val items = distribucion.map { (nombre, monto) ->
+        ItemGasto(
+            nombre = nombre,
+            monto = monto,
+            porcentaje = if (totalDistribucion > 0.0) {
+                monto * 100.0 / totalDistribucion
+            } else {
+                0.0
+            }
+        )
+    }
+
+    Scaffold(
+        containerColor = fondoRep,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Mis reportes",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 21.sp,
+                        color = textoRep
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onVolver) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = textoRep
+                        )
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(
+                            onClick = { menu = true }
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Opciones",
+                                tint = textoRep
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = menu,
+                            onDismissRequest = {
+                                menu = false
+                            }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Ver movimientos")
+                                },
+                                onClick = {
+                                    menu = false
+                                    onMovimientos()
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Ir al inicio")
+                                },
+                                onClick = {
+                                    menu = false
+                                    onInicio()
+                                }
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = fondoRep
+                )
+            )
+        }
+    ) { padding ->
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+
+            Text(
+                "Conoce cómo se mueve tu dinero",
+                color = grisRep,
+                fontSize = 13.sp
+            )
+
+            // =====================================
+            // FILTRO DE PERÍODO
+            // =====================================
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { filtros = true }
+                        .padding(15.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        color = moradoClaroRep,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = moradoRep,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            "PERÍODO ACTUAL",
+                            fontSize = 10.sp,
+                            color = grisRep,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            periodo,
+                            fontWeight = FontWeight.SemiBold,
+                            color = textoRep
+                        )
+                    }
+
+                    Icon(
+                        Icons.Default.FilterList,
+                        contentDescription = null,
+                        tint = moradoRep
+                    )
+
+                    Spacer(Modifier.width(5.dp))
+
+                    Text(
+                        "Filtrar",
+                        color = moradoRep,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            // =====================================
+            // TARJETA PRINCIPAL CON MASCOTA
+            // =====================================
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = verdeRep
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    Color(0xFF0D9948),
+                                    Color(0xFF18B965)
+                                )
+                            )
+                        )
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                if (balance >= 0.0) {
+                                    "¡Buen trabajo! ✨"
+                                } else {
+                                    "¡Podemos mejorar! 💜"
+                                },
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                if (balance >= 0.0) {
+                                    "Tus ingresos superan tus gastos en el período seleccionado."
+                                } else {
+                                    "Tus gastos superan tus ingresos. Revisa en qué puedes ahorrar."
+                                },
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                lineHeight = 18.sp
+                            )
+                        }
+
+                        Image(
+                            painter = painterResource(
+                                R.drawable.img
+                            ),
+                            contentDescription = "Mascota FinanQuest",
+                            modifier = Modifier.size(100.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
+                    HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.3f)
+                    )
+
+                    Text(
+                        "BALANCE DEL PERÍODO",
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        monedaReporte(balance),
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (balance >= 0.0) {
+                                Icons.Default.TrendingUp
+                            } else {
+                                Icons.Default.TrendingDown
+                            },
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(17.dp)
+                        )
+
+                        Spacer(Modifier.width(6.dp))
+
+                        Text(
+                            if (balance >= 0.0) {
+                                "Balance positivo"
+                            } else {
+                                "Balance negativo"
+                            },
+                            color = Color.White,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+
+            // =====================================
+            // TARJETAS DE RESUMEN
+            // =====================================
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TarjetaResumenReporte(
+                    titulo = "INGRESOS",
+                    valor = ingresos,
+                    periodo = periodo,
+                    fondo = verdeClaroRep,
+                    tinta = verdeRep,
+                    icono = Icons.Default.TrendingUp,
+                    modifier = Modifier.weight(1f)
+                )
+
+                TarjetaResumenReporte(
+                    titulo = "GASTOS",
+                    valor = gastos,
+                    periodo = periodo,
+                    fondo = rojoClaroRep,
+                    tinta = rojoRep,
+                    icono = Icons.Default.TrendingDown,
+                    modifier = Modifier.weight(1f)
+                )
+
+                TarjetaResumenReporte(
+                    titulo = "BALANCE",
+                    valor = balance,
+                    periodo = periodo,
+                    fondo = moradoClaroRep,
+                    tinta = moradoRep,
+                    icono = Icons.Default.Savings,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // =====================================
+            // DISTRIBUCIÓN DE GASTOS
+            // =====================================
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Distribución de gastos",
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = textoRep
+                )
+
+                TextButton(onClick = onMovimientos) {
+                    Text(
+                        "VER TODO",
+                        color = moradoRep,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            if (vm.cargando && vm.movimientos.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = verdeRep
+                    )
+                }
+            } else if (items.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Default.Wallet,
+                            contentDescription = null,
+                            tint = moradoRep,
+                            modifier = Modifier.size(40.dp)
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Text(
+                            "Sin gastos registrados",
+                            color = textoRep,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            "Todavía no hay gastos en este período.",
+                            color = grisRep,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            } else {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(22.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(205.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            GraficoDonutReporte(items)
+
+                            Column(
+                                horizontalAlignment =
+                                    Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "TOTAL GASTOS",
+                                    fontSize = 10.sp,
+                                    color = grisRep
+                                )
+
+                                Text(
+                                    monedaReporte(totalDistribucion),
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textoRep
+                                )
+                            }
+                        }
+
+                        items.forEachIndexed { index, item ->
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onMovimientos()
+                                    }
+                                    .padding(vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .background(
+                                            coloresGrafico[
+                                                index % coloresGrafico.size
+                                            ],
+                                            RoundedCornerShape(50)
+                                        )
+                                )
+
+                                Spacer(Modifier.width(10.dp))
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        item.nombre,
+                                        color = textoRep,
+                                        fontWeight = FontWeight.Medium
+                                    )
+
+                                    Text(
+                                        "${item.porcentaje.toInt()}%",
+                                        color = grisRep,
+                                        fontSize = 11.sp
+                                    )
+                                }
+
+                                Text(
+                                    monedaReporte(item.monto),
+                                    fontWeight = FontWeight.Bold,
+                                    color = textoRep
+                                )
+                            }
+
+                            if (index < items.lastIndex) {
+                                HorizontalDivider(
+                                    color = Color(0xFFEDEDF0)
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = onMovimientos,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = verdeRep
+                            ),
+                            shape = RoundedCornerShape(15.dp)
+                        ) {
+                            Text(
+                                "Ver movimientos",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            // =====================================
+            // CONSEJO FINANCIERO
+            // =====================================
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = moradoClaroRep
+                ),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = moradoRep,
+                        modifier = Modifier.size(32.dp)
+                    )
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column {
+                        Text(
+                            if (balance >= 0.0) {
+                                "¡Sigue así!"
+                            } else {
+                                "¡Organiza tus gastos!"
+                            },
+                            color = moradoRep,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+
+                        Text(
+                            "Revisa tus gastos por categoría y planifica cuánto destinar a tus metas.",
+                            color = textoRep,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+        }
+    }
+
+    // =========================================
+    // DIÁLOGO DE FILTROS
+    // =========================================
+
+    if (filtros) {
+        AlertDialog(
+            onDismissRequest = {
+                filtros = false
+            },
+            title = {
+                Text("Selecciona un período")
+            },
+            text = {
+                Column {
+                    listOf(
+                        "Este mes",
+                        "Últimos 3 meses",
+                        "Este año"
+                    ).forEach { opcion ->
+                        TextButton(
+                            onClick = {
+                                periodo = opcion
+                                filtros = false
+                            }
+                        ) {
+                            Text(
+                                opcion,
+                                color = if (periodo == opcion) {
+                                    verdeRep
+                                } else {
+                                    textoRep
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        filtros = false
+                    }
+                ) {
+                    Text(
+                        "Cerrar",
+                        color = moradoRep
+                    )
+                }
+            }
+        )
+    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable private fun Resumen(titulo:String,valor:String,fondo:Color,tinta:Color,modifier:Modifier=Modifier){Card(modifier,colors=CardDefaults.cardColors(containerColor=fondo),shape=RoundedCornerShape(18.dp)){Column(Modifier.fillMaxWidth().padding(vertical=15.dp,horizontal=6.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(if(titulo=="INGRESOS")Icons.Default.TrendingUp else if(titulo=="GASTOS")Icons.Default.TrendingDown else Icons.Default.Savings,null,tint=tinta);Text(titulo,fontSize=10.sp,color=Color.Gray,fontWeight=FontWeight.SemiBold);Text(valor,fontSize=19.sp,color=tinta,fontWeight=FontWeight.Bold);Text("ESTE MES",fontSize=9.sp,color=Color.Gray)}}}
+// =============================================
+// COMPONENTE: TARJETA DE RESUMEN
+// =============================================
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable private fun Donut(items:List<ItemGasto>){Canvas(Modifier.size(190.dp)){val stroke=size.minDimension*.19f;var start=-90f;items.forEachIndexed{index,item->val sweep=360f*item.porcentaje/100f;drawArc(color=colores[index],startAngle=start,sweepAngle=sweep-3f,useCenter=false,topLeft=Offset(stroke/2,stroke/2),size=androidx.compose.ui.geometry.Size(size.width-stroke,size.height-stroke),style=Stroke(stroke));start+=sweep}}}
+@Composable
+private fun TarjetaResumenReporte(
+    titulo: String,
+    valor: Double,
+    periodo: String,
+    fondo: Color,
+    tinta: Color,
+    icono: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = fondo
+        ),
+        shape = RoundedCornerShape(18.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 5.dp, vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Icon(
+                imageVector = icono,
+                contentDescription = null,
+                tint = tinta,
+                modifier = Modifier.size(25.dp)
+            )
 
+            Text(
+                titulo,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = grisRep
+            )
 
+            Text(
+                monedaReporte(valor),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = tinta,
+                maxLines = 1
+            )
 
+            Text(
+                periodo.uppercase(Locale.ROOT),
+                fontSize = 9.sp,
+                color = grisRep,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+// =============================================
+// COMPONENTE: GRÁFICO CIRCULAR
+// =============================================
+
+@Composable
+private fun GraficoDonutReporte(
+    items: List<ItemGasto>
+) {
+    Canvas(
+        modifier = Modifier.size(190.dp)
+    ) {
+        val grosor = size.minDimension * 0.18f
+        val margen = grosor / 2f
+
+        var inicio = -90f
+
+        val total = items.sumOf { it.monto }
+
+        if (total <= 0.0) return@Canvas
+
+        items.forEachIndexed { index, item ->
+
+            val barrido = (
+                    360.0 * item.monto / total
+                    ).toFloat()
+
+            if (barrido > 0f) {
+                drawArc(
+                    color = coloresGrafico[
+                        index % coloresGrafico.size
+                    ],
+                    startAngle = inicio,
+                    sweepAngle = (barrido - 2f)
+                        .coerceAtLeast(0f),
+                    useCenter = false,
+                    topLeft = Offset(margen, margen),
+                    size = Size(
+                        size.width - grosor,
+                        size.height - grosor
+                    ),
+                    style = Stroke(
+                        width = grosor
+                    )
+                )
+            }
+
+            inicio += barrido
+        }
+    }
+}
