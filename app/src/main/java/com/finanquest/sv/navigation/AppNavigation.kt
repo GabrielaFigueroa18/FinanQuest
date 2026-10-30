@@ -137,7 +137,8 @@ fun AppNavigation(
             Pantalla.DETALLE_META,
             Pantalla.NUEVA_META -> Pantalla.METAS
 
-            Pantalla.CATEGORIAS,
+            Pantalla.CATEGORIAS -> Pantalla.DASHBOARD
+
             Pantalla.CREAR_PRESUPUESTO -> Pantalla.PRESUPUESTOS
 
             Pantalla.PRESUPUESTOS,
@@ -366,7 +367,7 @@ fun AppNavigation(
 
                 Pantalla.CATEGORIAS -> CategoriasAlertasScreen(
                     onVolver = {
-                        pantalla = Pantalla.PRESUPUESTOS
+                        pantalla = Pantalla.DASHBOARD
                     },
                     vm = presupuestoViewModel,
                     onGuardarCategoria = { nombre, limite, umbral ->
@@ -597,4 +598,5 @@ fun AppNavigation(
         }
     }
 }
+
 
