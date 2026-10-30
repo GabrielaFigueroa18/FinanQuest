@@ -597,13 +597,22 @@ private fun TarjetaEstadistica(
             verticalArrangement = Arrangement.Center,
         ) {
             QuestArtwork(
-                if (etiqueta == "METAS") R.drawable.quest_goal else R.drawable.quest_reward,
+                when (etiqueta) {
+                    "RACHA DÍAS" -> R.drawable.quest_streak_fire
+                    "NIVEL" -> R.drawable.quest_level_trophy
+                    else -> R.drawable.quest_goal
+                },
                 Modifier.size(40.dp),
             )
 
             Spacer(Modifier.height(5.dp))
 
-            Text(text = valor, color = Texto, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(
+                text = valor,
+                color = if (etiqueta == "RACHA DÍAS") Color(0xFFE96B10) else Texto,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+            )
 
             Spacer(Modifier.height(3.dp))
 

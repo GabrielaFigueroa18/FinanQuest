@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -74,7 +73,7 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
                             modifier = Modifier.fillMaxWidth().padding(22.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            QuestArtwork(R.drawable.financat_hero, Modifier.size(130.dp))
+                            QuestArtwork(R.drawable.quest_level_trophy, Modifier.size(130.dp))
                             Text(
                                 "¡Cada misión te hace crecer!",
                                 color = moradoNivel,
@@ -127,13 +126,16 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                imageVector =
-                                    if (alcanzado) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
-                                contentDescription = null,
-                                tint = if (alcanzado) verdeNivel else Color.Gray,
-                                modifier = Modifier.size(30.dp),
-                            )
+                            if (alcanzado) {
+                                QuestArtwork(R.drawable.quest_level_trophy, Modifier.size(42.dp))
+                            } else {
+                                Icon(
+                                    Icons.Filled.Lock,
+                                    contentDescription = "Nivel bloqueado",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(30.dp),
+                                )
+                            }
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
                                 Text("Nivel $numero", fontWeight = FontWeight.Bold)
