@@ -3,12 +3,19 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { admin, db } = require("./firebase");
+// Importar las rutas de noticias financieras
+const noticiasRoutes = require("./routes/noticias");
 
 const app = express();
 
 app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json({ limit: "16kb" }));
+// ============================================
+// NOTICIAS FINANCIERAS - GNEWS
+// ============================================
+
+app.use("/api/noticias", noticiasRoutes);
 
 // ============================================
 // CONFIGURACION GENERAL
@@ -1165,7 +1172,7 @@ app.post("/api/recompensas/sincronizar", autenticar, async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(
     `FinanQuest backend funcionando en puerto ${PORT}`
   );

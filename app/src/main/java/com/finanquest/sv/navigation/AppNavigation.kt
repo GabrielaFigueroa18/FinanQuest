@@ -42,6 +42,7 @@ import com.finanquest.sv.ui.recompensas.RecompensasScreen
 import com.finanquest.sv.ui.recompensas.DetalleRecompensaScreen
 
 import com.finanquest.sv.ui.finanzas.*
+import com.finanquest.sv.ui.noticias.NoticiasScreen
 
 import com.finanquest.sv.viewmodel.AuthViewModel
 import com.finanquest.sv.viewmodel.CuentaViewModel
@@ -74,7 +75,8 @@ private enum class Pantalla {
     RECOMPENSAS,
     NIVELES,
     MASCOTA,
-    DETALLE_RECOMPENSA
+    DETALLE_RECOMPENSA,
+    NOTICIAS
 }
 
 @Composable
@@ -139,7 +141,8 @@ fun AppNavigation(
             Pantalla.CREAR_PRESUPUESTO -> Pantalla.PRESUPUESTOS
 
             Pantalla.PRESUPUESTOS,
-            Pantalla.REPORTES -> Pantalla.DASHBOARD
+            Pantalla.REPORTES,
+            Pantalla.NOTICIAS -> Pantalla.DASHBOARD
 
             Pantalla.METAS,
             Pantalla.PERFIL,
@@ -283,6 +286,15 @@ fun AppNavigation(
                     },
                     onReportes = {
                         pantalla = Pantalla.REPORTES
+                    },
+                    onNoticias = {
+                        pantalla = Pantalla.NOTICIAS
+                    }
+                )
+
+                Pantalla.NOTICIAS -> NoticiasScreen(
+                    onVolver = {
+                        pantalla = Pantalla.DASHBOARD
                     }
                 )
 
@@ -585,3 +597,4 @@ fun AppNavigation(
         }
     }
 }
+

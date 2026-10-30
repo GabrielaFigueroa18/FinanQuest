@@ -16,3 +16,6 @@ local.properties
 /finanquest-backend/node_modules/
 /finanquest-backend/.env
 /finanquest-backend/serviceAccountKey.json
+.env
+node_modules/
+serviceAccountKey.json

@@ -72,6 +72,7 @@ fun DashboardScreen(
     onNuevaMeta: () -> Unit = {},
     onNuevaCategoria: () -> Unit = {},
     onReportes: () -> Unit = {},
+    onNoticias: () -> Unit = {},
     onCuentas: () -> Unit = {},
     onRecompensas: () -> Unit = {},
     onNotificaciones: () -> Unit = {},
@@ -226,7 +227,7 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            MensajeMascota(nivel = nivel, xp = xp, onClick = onMascota)
+            MensajeMascota(nivel = nivel, xp = xp, onClick = onMisiones)
 
             Spacer(Modifier.height(20.dp))
 
@@ -305,7 +306,8 @@ fun DashboardScreen(
                 onNuevaMeta = onNuevaMeta,
                 onNuevaCategoria = onNuevaCategoria,
                 onReportes = onReportes,
-                onPresupuestos = onPresupuestos
+                onPresupuestos = onPresupuestos,
+                onNoticias = onNoticias
             )
 
             Spacer(Modifier.height(16.dp))
@@ -466,7 +468,7 @@ private fun MensajeMascota(
                     fontSize = 13.sp, lineHeight = 18.sp, color = Texto, fontWeight = FontWeight.Medium
                 )
                 Spacer(Modifier.height(4.dp))
-                Text("VER MI MASCOTA  ›", color = Verde, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("VER MIS MISIONES  ›", color = Verde, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -936,7 +938,8 @@ private fun AccionesRapidas(
     onNuevaMeta: () -> Unit,
     onNuevaCategoria: () -> Unit,
     onReportes: () -> Unit,
-    onPresupuestos: () -> Unit
+    onPresupuestos: () -> Unit,
+    onNoticias: () -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -992,6 +995,15 @@ private fun AccionesRapidas(
             onClick = onPresupuestos,
             modifier = Modifier.fillMaxWidth(),
             borde = Verde
+        )
+
+        BotonAccion(
+            texto = "NOTICIAS FINANCIERAS",
+            icono = Icons.Filled.Article,
+            colorIcono = Morado,
+            onClick = onNoticias,
+            modifier = Modifier.fillMaxWidth(),
+            borde = Morado
         )
     }
 }
