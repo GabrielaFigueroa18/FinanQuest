@@ -19,5 +19,3 @@ local.properties
 .env
 node_modules/
 serviceAccountKey.json
-
-/.kotlin/
