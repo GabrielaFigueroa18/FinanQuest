@@ -4,6 +4,9 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
+import com.finanquest.sv.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -30,11 +33,11 @@ import com.finanquest.sv.viewmodel.AuthViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 
-private val Fondo = Color(0xFFF7F8FA)
-private val Verde = Color(0xFF16A34A)
-private val Morado = Color(0xFF7C3AED)
+private val Fondo = Color(0xFFF8F9FB)
+private val Verde = Color(0xFF119F50)
+private val Morado = Color(0xFF7045B7)
 private val Rojo = Color(0xFFEF4444)
-private val Texto = Color(0xFF22252B)
+private val Texto = Color(0xFF302A40)
 private val Gris = Color(0xFF7B808A)
 private val Borde = Color(0xFFE5E7EB)
 
@@ -157,74 +160,110 @@ fun PerfilScreen(
                 .padding(horizontal = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
-            Box(
-                modifier = Modifier
-                    .size(105.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFEDE9FE)),
-                contentAlignment = Alignment.Center
+            // Encabezado con foto real y datos de Firebase.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shape = RoundedCornerShape(24.dp),
+                shadowElevation = 2.dp
             ) {
-                if (bitmapFoto != null) {
-                    Image(
-                        bitmap = bitmapFoto.asImageBitmap(),
-                        contentDescription = "Fotografía de perfil",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(116.dp)
+                            .background(
+                                Brush.linearGradient(listOf(Verde, Morado)),
+                                CircleShape
+                            )
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFF2ECFC)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (bitmapFoto != null) {
+                            Image(
+                                bitmap = bitmapFoto.asImageBitmap(),
+                                contentDescription = "Fotografía de perfil",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                Icons.Filled.Person,
+                                contentDescription = "Avatar del estudiante",
+                                tint = Morado,
+                                modifier = Modifier.size(66.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        nombre,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Texto,
+                        textAlign = TextAlign.Center
                     )
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = "Avatar del estudiante",
-                        tint = Morado,
-                        modifier = Modifier.size(65.dp)
+                    Spacer(Modifier.height(5.dp))
+                    Text(
+                        universidad,
+                        fontSize = 13.sp,
+                        color = Gris,
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(Modifier.height(12.dp))
+                    Surface(
+                        color = Color(0xFFE8F8EF),
+                        shape = RoundedCornerShape(50.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Filled.Stars, null, tint = Verde, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Explorador financiero · Nivel $nivel", color = Verde, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
-            Text(
-                text = nombre,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Texto,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(5.dp))
-            Text(
-                text = universidad,
-                fontSize = 14.sp,
-                color = Gris,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(22.dp))
-
+            Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 EstadisticaPerfil(
                     icono = Icons.Filled.EmojiEvents,
-                    etiqueta = "nivel",
+                    etiqueta = "NIVEL ACTUAL",
                     valor = nivel.toString(),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    tinta = Morado,
+                    fondoIcono = Color(0xFFF2ECFC)
                 )
                 EstadisticaPerfil(
                     icono = Icons.Filled.Bolt,
-                    etiqueta = "xp total",
+                    etiqueta = "XP ACUMULADOS",
                     valor = "%,d".format(xp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    tinta = Verde,
+                    fondoIcono = Color(0xFFE8F8EF)
                 )
             }
 
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(16.dp))
             Surface(
                 onClick = onNiveles,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                color = Color.Transparent
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White,
+                shadowElevation = 2.dp
             ) { ProgresoNivel(xp = xp, nivel = nivel) }
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(16.dp))
             MensajeMotivacional()
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(26.dp))
 
             // Nueva sección: el destino se conecta desde AppNavigation.kt.
             TituloSeccion("MIS LOGROS")
@@ -374,72 +413,59 @@ private fun EstadisticaPerfil(
     icono: ImageVector,
     etiqueta: String,
     valor: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tinta: Color = Morado,
+    fondoIcono: Color = Color(0xFFF2ECFC)
 ) {
     Surface(
-        modifier = modifier.height(120.dp),
-        shape = RoundedCornerShape(18.dp),
-        color = Fondo,
-        border = BorderStroke(1.dp, Borde),
+        modifier = modifier.height(122.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
         shadowElevation = 2.dp
     ) {
         Column(
+            modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(imageVector = icono, contentDescription = null, tint = Texto)
-            Spacer(Modifier.height(8.dp))
-            Text(etiqueta, color = Gris, fontSize = 14.sp)
-            Spacer(Modifier.height(5.dp))
-            Text(valor, color = Texto, fontWeight = FontWeight.Bold, fontSize = 21.sp)
+            Surface(color = fondoIcono, shape = RoundedCornerShape(12.dp)) {
+                Icon(icono, null, tint = tinta, modifier = Modifier.padding(9.dp).size(23.dp))
+            }
+            Spacer(Modifier.height(7.dp))
+            Text(etiqueta, color = Gris, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(3.dp))
+            Text(valor, color = tinta, fontWeight = FontWeight.Bold, fontSize = 23.sp)
         }
     }
 }
 
 @Composable
 private fun ProgresoNivel(xp: Int, nivel: Int) {
-    // Coincide con XP_POR_NIVEL = 100 en server.js.
+    // Mantiene la regla original de 100 XP por nivel.
     val xpPorNivel = 100
     val xpNivel = xp % xpPorNivel
     val progreso = xpNivel.toFloat() / xpPorNivel
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = Fondo,
-        border = BorderStroke(1.dp, Borde)
-    ) {
-        Column(modifier = Modifier.padding(17.dp)) {
-            Text("PROGRESO DE NIVEL", fontSize = 12.sp, color = Gris)
-            Spacer(Modifier.height(6.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Siguiente Nivel: ${nivel + 1}",
-                    fontWeight = FontWeight.Bold,
-                    color = Texto,
-                    fontSize = 15.sp
-                )
-                Text(
-                    "$xpNivel / $xpPorNivel XP",
-                    color = Verde,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(Modifier.height(10.dp))
-            LinearProgressIndicator(
-                progress = { progreso },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                color = Verde,
-                trackColor = Borde
-            )
+    Column(modifier = Modifier.padding(18.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.AutoAwesome, null, tint = Morado, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(9.dp))
+            Text("Tu progreso", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Texto)
         }
+        Spacer(Modifier.height(13.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Camino al nivel ${nivel + 1}", fontWeight = FontWeight.Medium, color = Texto, fontSize = 13.sp)
+            Text("$xpNivel / $xpPorNivel XP", color = Verde, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.height(10.dp))
+        LinearProgressIndicator(
+            progress = { progreso },
+            modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(12.dp)),
+            color = Verde,
+            trackColor = Color(0xFFE8F8EF)
+        )
+        Spacer(Modifier.height(9.dp))
+        Text("¡Cada misión te acerca a tu siguiente nivel!", color = Gris, fontSize = 12.sp)
     }
 }
 
@@ -448,22 +474,21 @@ private fun MensajeMotivacional() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = Color(0xFFF5F3FF),
-        border = BorderStroke(1.dp, Color(0xFFD8CCFF))
+        color = Color(0xFFF2ECFC)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("🐱", fontSize = 49.sp)
+            Image(
+                painter = painterResource(R.drawable.img),
+                contentDescription = "Mascota de FinanQuest",
+                modifier = Modifier.size(82.dp),
+                contentScale = ContentScale.Fit
+            )
             Spacer(Modifier.width(12.dp))
-            Column {
-                Text(
-                    "¡Vas por buen camino!",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Texto
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                Text("¡Vas por buen camino!", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Morado)
                 Spacer(Modifier.height(5.dp))
                 Text(
                     "¡Sigue completando misiones para ganar XP y mejorar tus finanzas!",
@@ -493,7 +518,7 @@ private fun GrupoOpciones(contenido: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(19.dp),
-        color = Fondo,
+        color = Color.White,
         shadowElevation = 2.dp
     ) {
         Column(modifier = Modifier.padding(horizontal = 15.dp), content = contenido)
@@ -519,13 +544,13 @@ private fun OpcionPerfil(
             modifier = Modifier
                 .size(39.dp)
                 .clip(RoundedCornerShape(11.dp))
-                .background(Color(0xFFF0F1F3)),
+                .background(Color(0xFFF2ECFC)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icono,
                 contentDescription = null,
-                tint = Gris,
+                tint = Morado,
                 modifier = Modifier.size(21.dp)
             )
         }
