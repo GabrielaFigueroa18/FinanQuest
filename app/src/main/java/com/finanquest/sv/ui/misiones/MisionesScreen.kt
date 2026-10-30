@@ -1,6 +1,6 @@
+
 package com.finanquest.sv.ui.misiones
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,7 +11,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
@@ -37,31 +35,80 @@ private data class Mision(
     val titulo: String,
     val descripcion: String,
     val xp: Int,
-    val progreso: Int,
-    val icono: ImageVector,
-    val detalle: String,
-    val recompensaConfirmada: Boolean = false
+    val icono: ImageVector
 )
 
-// Catálogo inicial local; el progreso de cada usuario se consulta en Firestore.
-private val misionesDemo = listOf(
+
+private val catalogoMisiones = listOf(
     Mision(
-        "primer_ahorro_semanal", "Primer Ahorro Semanal",
-        "Guarda al menos $5.00 en tu alcancía digital esta semana.",
-        250, 0, Icons.Filled.Savings,
-        "Ahorra $5.00 durante la semana. Cuando conectemos el módulo de ahorro, el progreso se calculará automáticamente."
+        id = "primer_ahorro_semanal",
+        titulo = "Primer Ahorro Semanal",
+        descripcion = "Guarda al menos $5.00 en tu alcancía digital esta semana.",
+        xp = 250,
+        icono = Icons.Filled.Savings
     ),
     Mision(
-        "maestro_presupuesto", "Maestro de Presupuesto",
-        "Completa el módulo educativo sobre presupuestos universitarios.",
-        150, 0, Icons.Filled.School,
-        "Completa la lección de presupuestos y su evaluación para recibir la recompensa."
+        id = "maestro_presupuesto",
+        titulo = "Maestro de Presupuesto",
+        descripcion = "Completa el módulo educativo sobre presupuestos universitarios.",
+        xp = 150,
+        icono = Icons.Filled.School
     ),
     Mision(
-        "inversionista_novato", "Inversionista Novato",
-        "Lee el artículo sobre fondos de inversión locales.",
-        100, 0, Icons.Filled.TrendingUp,
-        "Lee el contenido educativo sobre inversión y responde la actividad de comprensión."
+        id = "inversionista_novato",
+        titulo = "Inversionista Novato",
+        descripcion = "Aprende sobre inversiones y supera la evaluación.",
+        xp = 100,
+        icono = Icons.Filled.TrendingUp
+    ),
+    Mision(
+        id = "primer_movimiento",
+        titulo = "Primer Movimiento",
+        descripcion = "Registra tu primer ingreso o gasto en FinanQuest.",
+        xp = 50,
+        icono = Icons.Filled.AccountBalanceWallet
+    ),
+    Mision(
+        id = "organizador_financiero",
+        titulo = "Organizador Financiero",
+        descripcion = "Registra cinco movimientos financieros.",
+        xp = 100,
+        icono = Icons.Filled.ReceiptLong
+    ),
+    Mision(
+        id = "mi_primera_meta",
+        titulo = "Mi Primera Meta",
+        descripcion = "Crea tu primera meta de ahorro.",
+        xp = 100,
+        icono = Icons.Filled.Flag
+    ),
+    Mision(
+        id = "planificador_mes",
+        titulo = "Planificador del Mes",
+        descripcion = "Crea un presupuesto para organizar tus gastos.",
+        xp = 150,
+        icono = Icons.Filled.CalendarMonth
+    ),
+    Mision(
+        id = "ahorrador_constante",
+        titulo = "Ahorrador Constante",
+        descripcion = "Registra ahorros durante tres días diferentes.",
+        xp = 200,
+        icono = Icons.Filled.Savings
+    ),
+    Mision(
+        id = "explorador_financiero",
+        titulo = "Explorador Financiero",
+        descripcion = "Completa tres lecciones de educación financiera.",
+        xp = 200,
+        icono = Icons.Filled.MenuBook
+    ),
+    Mision(
+        id = "experto_finanzas",
+        titulo = "Experto en Finanzas",
+        descripcion = "Completa cinco misiones verificadas.",
+        xp = 300,
+        icono = Icons.Filled.EmojiEvents
     )
 )
 
@@ -72,355 +119,568 @@ fun MisionesScreen(
     onPerfil: () -> Unit = {},
     onAbrirLeccionInversiones: () -> Unit = {}
 ) {
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+    val firestore = remember { FirebaseFirestore.getInstance() }
+
     var busqueda by remember { mutableStateOf("") }
     var pestana by remember { mutableIntStateOf(0) }
-    var misionDetalle by remember { mutableStateOf<Mision?>(null) }
-    var aviso by remember { mutableStateOf<String?>(null) }
-    val uid = FirebaseAuth.getInstance().currentUser?.uid
 
-    LaunchedEffect(uid) {
-        Log.d("MISIONES_DEBUG", "UID actual: $uid")
+    var misionActivaId by remember(uid) {
+        mutableStateOf<String?>(null)
     }
-    var progresos by remember(uid) { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var cargandoMisiones by remember(uid) { mutableStateOf(uid != null) }
-    var errorMisiones by remember(uid) { mutableStateOf<String?>(null) }
-    var recompensasConfirmadas by remember(uid) { mutableStateOf<Set<String>>(emptySet()) }
-    var errorRecompensas by remember(uid) { mutableStateOf(false) }
 
+    var progresos by remember(uid) {
+        mutableStateOf<Map<String, Int>>(emptyMap())
+    }
+
+    var recompensas by remember(uid) {
+        mutableStateOf<Set<String>>(emptySet())
+    }
+
+    var cargando by remember(uid) {
+        mutableStateOf(uid != null)
+    }
+
+    var aviso by remember { mutableStateOf<String?>(null) }
+    var guardando by remember { mutableStateOf(false) }
+    var errorProgreso by remember { mutableStateOf<String?>(null) }
+    var errorRecompensas by remember { mutableStateOf(false) }
+
+    var detalle by remember { mutableStateOf<Mision?>(null) }
+
+    // ESCUCHAR LOS CAMBIOS EN FIREBASE
     DisposableEffect(uid) {
         if (uid == null) {
-            cargandoMisiones = false
-            errorMisiones = "Inicia sesión para consultar tus misiones."
-            onDispose { }
+            cargando = false
+            errorProgreso = "Inicia sesión para consultar tus misiones."
+            onDispose {}
         } else {
-            val registro = FirebaseFirestore.getInstance()
+            val usuarioRef = firestore
                 .collection("usuarios")
                 .document(uid)
-                .collection("progreso_misiones")
-                .addSnapshotListener { instantanea, error ->
-                    Log.d(
-                        "MISIONES_DEBUG",
-                        "Error: ${error?.message}, documentos: ${instantanea?.documents?.size}"
-                    )
-                    instantanea?.documents?.forEach { documento ->
-                        Log.d(
-                            "MISIONES_DEBUG",
-                            "Documento: ${documento.id}, progreso: ${documento.get("progreso")}"
-                        )
-                    }
-                    cargandoMisiones = false
-                    if (error != null) {
-                        errorMisiones = "No se pudo cargar el progreso: ${error.localizedMessage}"
-                    } else {
-                        errorMisiones = null
-                        progresos = instantanea?.documents?.associate { documento ->
-                            documento.id to ((documento.getLong("progreso") ?: 0L)
-                                .toInt().coerceIn(0, 100))
-                        } ?: emptyMap()
+
+            val listenerUsuario = usuarioRef
+                .addSnapshotListener { snapshot, error ->
+                    if (error == null) {
+                        misionActivaId =
+                            snapshot?.getString("misionActivaId")
                     }
                 }
-            // Las recompensas solo se consideran entregadas cuando existe
-            // el registro correspondiente creado por el backend.
-            val registroRecompensas = FirebaseFirestore.getInstance()
-                .collection("usuarios")
-                .document(uid)
+
+            val listenerProgreso = usuarioRef
+                .collection("progreso_misiones")
+                .addSnapshotListener { snapshot, error ->
+                    cargando = false
+
+                    if (error != null) {
+                        errorProgreso =
+                            "No se pudo consultar el progreso."
+                    } else {
+                        errorProgreso = null
+
+                        progresos = snapshot?.documents
+                            ?.associate { documento ->
+                                documento.id to (
+                                        documento.getLong("progreso")
+                                            ?.toInt() ?: 0
+                                        ).coerceIn(0, 100)
+                            } ?: emptyMap()
+                    }
+                }
+
+            val listenerRecompensas = usuarioRef
                 .collection("recompensas_otorgadas")
-                .addSnapshotListener { instantanea, error ->
+                .addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         errorRecompensas = true
-                        Log.w("MISIONES_DEBUG", "No se pudo verificar recompensas", error)
                     } else {
                         errorRecompensas = false
-                        recompensasConfirmadas = instantanea?.documents
-                            ?.map { it.id }?.toSet() ?: emptySet()
+
+                        recompensas = snapshot?.documents
+                            ?.map { it.id }
+                            ?.toSet() ?: emptySet()
                     }
                 }
+
             onDispose {
-                registro.remove()
-                registroRecompensas.remove()
+                listenerUsuario.remove()
+                listenerProgreso.remove()
+                listenerRecompensas.remove()
             }
         }
     }
 
-    val misiones = misionesDemo.map { mision ->
-        mision.copy(
-            progreso = progresos[mision.id] ?: 0,
-            recompensaConfirmada = mision.id in recompensasConfirmadas
-        )
+    // GUARDAR LA MISION SELECCIONADA
+    fun seleccionarMision(mision: Mision) {
+        if (uid == null) {
+            aviso = "Debes iniciar sesión."
+            return
+        }
+
+        if (guardando) return
+
+        if (mision.id in recompensas ||
+            (progresos[mision.id] ?: 0) >= 100
+        ) {
+            aviso = "Esta misión ya está completada."
+            return
+        }
+
+        guardando = true
+
+        firestore.collection("usuarios")
+            .document(uid)
+            .update("misionActivaId", mision.id)
+            .addOnSuccessListener {
+                misionActivaId = mision.id
+                guardando = false
+                aviso = "¡Misión activa actualizada!"
+            }
+            .addOnFailureListener { error ->
+                guardando = false
+                aviso = "No se pudo guardar: ${error.localizedMessage}"
+            }
     }
 
-    val visibles = misiones.filter {
-        it.titulo.contains(busqueda.trim(), ignoreCase = true) ||
-                it.descripcion.contains(busqueda.trim(), ignoreCase = true)
-    }.filter { if (pestana == 0) it.progreso < 100 else it.progreso == 100 }
+    val misionesFiltradas = catalogoMisiones.filter { mision ->
+        val coincide =
+            mision.titulo.contains(
+                busqueda.trim(),
+                ignoreCase = true
+            ) || mision.descripcion.contains(
+                busqueda.trim(),
+                ignoreCase = true
+            )
+
+        val completada =
+            (progresos[mision.id] ?: 0) >= 100 ||
+                    mision.id in recompensas
+
+        coincide && if (pestana == 0) {
+            !completada
+        } else {
+            completada
+        }
+    }
 
     Scaffold(
         containerColor = Fondo,
-        bottomBar = {
-            NavigationBar(containerColor = Color.White, tonalElevation = 3.dp) {
-                ItemInferior("Inicio", Icons.Filled.Home, false, onInicio)
-                ItemInferior("Movimientos", Icons.Filled.AccountBalanceWallet, false) {
-                    aviso = "Movimientos se conectará próximamente."
+        topBar = {
+            Surface(color = Color.White) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onVolver) {
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Mis Misiones",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Texto
+                        )
+
+                        Text(
+                            "Supera desafíos y gana recompensas",
+                            fontSize = 12.sp,
+                            color = Gris
+                        )
+                    }
+
+                    IconButton(onClick = onPerfil) {
+                        Icon(
+                            Icons.Filled.PersonOutline,
+                            contentDescription = "Abrir perfil",
+                            tint = Morado
+                        )
+                    }
                 }
-                ItemInferior("Metas", Icons.Filled.TrackChanges, false) {
-                    aviso = "Metas se conectará próximamente."
-                }
-                ItemInferior("Mascota", Icons.Filled.Pets, false) {
-                    aviso = "Mascota se conectará próximamente."
-                }
-                ItemInferior("Nivel", Icons.Filled.EmojiEvents, false) {
-                    aviso = "Nivel se conectará próximamente."
-                }
-                ItemInferior("Perfil", Icons.Filled.PersonOutline, false, onPerfil)
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().statusBarsPadding()
-                    .padding(start = 12.dp, end = 16.dp, top = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onVolver) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Mis Misiones", fontSize = 27.sp, fontWeight = FontWeight.Bold, color = Texto)
-                    Text("Supera desafíos para subir de nivel", fontSize = 12.sp, color = Gris)
-                }
-                Surface(shape = RoundedCornerShape(30.dp), color = Color(0xFFFFF2E4)) {
-                    Row(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFFF9100), modifier = Modifier.size(19.dp))
-                        Spacer(Modifier.width(3.dp))
-                        Text("5", color = Color(0xFF9A5B00), fontWeight = FontWeight.Bold)
-                    }
-                }
-                Spacer(Modifier.width(7.dp))
-                IconButton(onClick = { aviso = "El seguimiento de rachas se conectará próximamente." }) {
-                    Icon(Icons.Filled.TrendingUp, "Racha", tint = Verde)
-                }
-            }
 
-            Spacer(Modifier.height(15.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = busqueda,
                 onValueChange = { busqueda = it },
-                placeholder = { Text("Buscar misiones...") },
-                leadingIcon = { Icon(Icons.Filled.Search, null) },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text("Buscar misiones...")
+                },
+                leadingIcon = {
+                    Icon(Icons.Filled.Search, null)
+                },
                 singleLine = true,
-                shape = RoundedCornerShape(15.dp),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Morado,
-                    unfocusedContainerColor = Color(0xFFF0F1F3),
-                    focusedContainerColor = Color.White
-                )
+                shape = RoundedCornerShape(15.dp)
             )
-            Spacer(Modifier.height(20.dp))
-            HorizontalDivider(color = Borde)
-            Spacer(Modifier.height(22.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-                    .background(Color(0xFFF1F1F4), RoundedCornerShape(16.dp))
-                    .padding(4.dp)
-            ) {
-                listOf("Activas  ${misiones.count { it.progreso < 100 }}", "Completadas").forEachIndexed { index, texto ->
-                    Surface(
-                        modifier = Modifier.weight(1f).clickable { pestana = index },
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (pestana == index) Morado else Color.Transparent,
-                        shadowElevation = if (pestana == index) 2.dp else 0.dp
-                    ) {
-                        Box(Modifier.padding(12.dp), contentAlignment = Alignment.Center) {
-                            Text(
-                                texto,
-                                color = if (pestana == index) Color.White else Morado,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
             Spacer(Modifier.height(18.dp))
 
-            if (cargandoMisiones) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
-                Spacer(Modifier.height(12.dp))
-            }
-            errorMisiones?.let { error ->
-                Text(error, color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-            }
-            if (errorRecompensas) {
-                Text(
-                    "No se pudo verificar si los XP fueron entregados.",
-                    color = Gris,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+            // PESTAÑAS
+            TabRow(
+                selectedTabIndex = pestana,
+                containerColor = Color.White,
+                contentColor = Morado
+            ) {
+                Tab(
+                    selected = pestana == 0,
+                    onClick = { pestana = 0 },
+                    text = { Text("Pendientes") }
                 )
-            }
-            if (visibles.isEmpty()) {
-                Text(
-                    if (pestana == 1) "Todavía no tienes misiones completadas."
-                    else "No se encontraron misiones.",
-                    modifier = Modifier.fillMaxWidth().padding(28.dp),
-                    color = Gris
+
+                Tab(
+                    selected = pestana == 1,
+                    onClick = { pestana = 1 },
+                    text = { Text("Completadas") }
                 )
-            } else {
-                visibles.forEach { mision ->
-                    TarjetaMision(mision, onDetalle = {
-                        if (mision.id == "inversionista_novato") {
-                            onAbrirLeccionInversiones()
-                        } else {
-                            misionDetalle = mision
-                        }
-                    })
-                    Spacer(Modifier.height(14.dp))
-                }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(18.dp))
+
+            if (cargando) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Morado
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            errorProgreso?.let {
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            if (errorRecompensas) {
+                Text(
+                    "No se pudo verificar la entrega de XP.",
+                    color = Gris,
+                    fontSize = 12.sp
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            if (!cargando && misionesFiltradas.isEmpty()) {
+                Text(
+                    if (pestana == 0)
+                        "No hay misiones pendientes."
+                    else
+                        "Todavía no tienes misiones completadas.",
+                    color = Gris,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            misionesFiltradas.forEach { mision ->
+
+                val progreso =
+                    progresos[mision.id] ?: 0
+
+                val confirmada =
+                    mision.id in recompensas
+
+                val esActiva =
+                    misionActivaId == mision.id
+
+                TarjetaMision(
+                    mision = mision,
+                    progreso = progreso,
+                    recompensaConfirmada = confirmada,
+                    esActiva = esActiva,
+                    onDetalle = {
+                        if (
+                            mision.id == "inversionista_novato" &&
+                            progreso < 100 &&
+                            !confirmada
+                        ) {
+                            onAbrirLeccionInversiones()
+                        } else {
+                            detalle = mision
+                        }
+                    },
+                    onSeleccionar = {
+                        seleccionarMision(mision)
+                    },
+                    guardando = guardando
+                )
+
+                Spacer(Modifier.height(14.dp))
+            }
+
+            Spacer(Modifier.height(10.dp))
+
             Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                color = Color(0xFFE4D8F7),
-                border = BorderStroke(1.dp, Color(0xFFD7C5F2))
+                color = Color(0xFFEDE4FC)
             ) {
-                Column(Modifier.padding(22.dp)) {
-                    Text("¡Sigue así!", fontWeight = FontWeight.Bold, color = Verde)
-                    Spacer(Modifier.height(5.dp))
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
                     Text(
-                        "Completar misiones te otorgará FinaCoins que podrás usar para personalizar tu FinanCat.",
-                        color = Gris, fontSize = 13.sp, lineHeight = 19.sp
+                        "¡Sigue así!",
+                        color = Verde,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(Modifier.height(6.dp))
+
+                    Text(
+                        "Completa misiones para ganar XP, " +
+                                "subir de nivel y desbloquear recompensas.",
+                        color = Gris,
+                        fontSize = 13.sp
                     )
                 }
             }
-            Spacer(Modifier.height(25.dp))
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 
-    misionDetalle?.let { mision ->
+    // DETALLES DE LA MISION
+    detalle?.let { mision ->
+        val progreso = progresos[mision.id] ?: 0
+        val confirmada = mision.id in recompensas
+
         AlertDialog(
-            onDismissRequest = { misionDetalle = null },
+            onDismissRequest = { detalle = null },
             title = { Text(mision.titulo) },
             text = {
                 Column {
-                    Text(mision.detalle)
+                    Text(mision.descripcion)
+
                     Spacer(Modifier.height(12.dp))
-                    Text("Progreso registrado: ${mision.progreso}%")
+
+                    Text("Progreso: $progreso%")
+
+                    Spacer(Modifier.height(8.dp))
+
                     Text(
                         when {
-                            mision.recompensaConfirmada -> "Recompensa registrada: +${mision.xp} XP"
-                            mision.progreso == 100 -> "Recompensa pendiente de confirmar: +${mision.xp} XP"
-                            else -> "Recompensa prevista: +${mision.xp} XP"
+                            confirmada ->
+                                "Recompensa entregada: +${mision.xp} XP"
+                            progreso >= 100 ->
+                                "Recompensa pendiente de validación"
+                            else ->
+                                "Recompensa disponible: +${mision.xp} XP"
                         },
                         color = Verde
                     )
                 }
             },
             confirmButton = {
-                TextButton(onClick = { misionDetalle = null }) { Text("Entendido") }
+                TextButton(onClick = { detalle = null }) {
+                    Text("Cerrar")
+                }
             }
         )
     }
-    aviso?.let { texto ->
+
+    aviso?.let { mensaje ->
         AlertDialog(
             onDismissRequest = { aviso = null },
-            title = { Text("Próximamente") },
-            text = { Text(texto) },
-            confirmButton = { TextButton(onClick = { aviso = null }) { Text("Aceptar") } }
+            title = { Text("FinanQuest SV") },
+            text = { Text(mensaje) },
+            confirmButton = {
+                TextButton(onClick = { aviso = null }) {
+                    Text("Aceptar")
+                }
+            }
         )
     }
 }
 
 @Composable
-private fun TarjetaMision(mision: Mision, onDetalle: () -> Unit) {
+private fun TarjetaMision(
+    mision: Mision,
+    progreso: Int,
+    recompensaConfirmada: Boolean,
+    esActiva: Boolean,
+    onDetalle: () -> Unit,
+    onSeleccionar: () -> Unit,
+    guardando: Boolean
+) {
+    val completada =
+        progreso >= 100 || recompensaConfirmada
+
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (esActiva) Morado else Borde
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top
+            ) {
                 Box(
-                    Modifier.size(48.dp).clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFFE0F1E9)),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFFEDE4FC)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(mision.icono, null, tint = Morado, modifier = Modifier.size(26.dp))
+                    Icon(
+                        mision.icono,
+                        contentDescription = null,
+                        tint = Morado
+                    )
                 }
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(mision.titulo, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Texto)
-                    Spacer(Modifier.height(5.dp))
-                    Text(mision.descripcion, fontSize = 12.sp, color = Gris, lineHeight = 17.sp)
-                }
-                Spacer(Modifier.width(5.dp))
-                Text("+${mision.xp} XP", color = Verde, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
-            Spacer(Modifier.height(16.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("PROGRESO", color = Gris, fontSize = 10.sp)
-                Text("${mision.progreso}%", color = Gris, fontSize = 11.sp)
-            }
-            Spacer(Modifier.height(7.dp))
-            LinearProgressIndicator(
-                progress = { mision.progreso / 100f },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(10.dp)),
-                color = Verde, trackColor = Color(0xFFE7E8EB)
-            )
-            Spacer(Modifier.height(17.dp))
-            HorizontalDivider(color = Borde)
-            Spacer(Modifier.height(13.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("🎁", fontSize = 21.sp)
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    when {
-                        mision.recompensaConfirmada -> "XP registrados"
-                        mision.progreso == 100 -> "XP sin confirmar"
-                        else -> "Recompensa de XP"
-                    },
-                    color = Texto,
-                    fontSize = 12.sp,
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(
                     modifier = Modifier.weight(1f)
-                )
-                TextButton(onClick = onDetalle, contentPadding = PaddingValues(0.dp)) {
-                    Text("VER DETALLES", color = Verde, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Icon(Icons.Filled.ChevronRight, null, tint = Verde, modifier = Modifier.size(16.dp))
+                ) {
+                    Text(
+                        mision.titulo,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Texto
+                    )
+
+                    Spacer(Modifier.height(5.dp))
+
+                    Text(
+                        mision.descripcion,
+                        fontSize = 12.sp,
+                        color = Gris
+                    )
                 }
+
+                Text(
+                    "+${mision.xp} XP",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Verde
+                )
+            }
+
+            if (esActiva && !completada) {
+                Spacer(Modifier.height(10.dp))
+
+                Text(
+                    "✓ MISIÓN ACTIVA",
+                    color = Morado,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "PROGRESO",
+                    color = Gris,
+                    fontSize = 11.sp
+                )
+
+                Text(
+                    "$progreso%",
+                    color = Texto,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            LinearProgressIndicator(
+                progress = { progreso.coerceIn(0, 100) / 100f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(9.dp)
+                    .clip(RoundedCornerShape(9.dp)),
+                color = Morado,
+                trackColor = Color(0xFFEAE7F2)
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            Text(
+                when {
+                    recompensaConfirmada ->
+                        "XP registrados correctamente"
+                    progreso >= 100 ->
+                        "XP pendientes de confirmar"
+                    else ->
+                        "Recompensa: ${mision.xp} XP"
+                },
+                color = Gris,
+                fontSize = 12.sp
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            if (!completada) {
+                OutlinedButton(
+                    onClick = onSeleccionar,
+                    enabled = !guardando && !esActiva,
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Morado)
+                ) {
+                    Text(
+                        if (esActiva)
+                            "✓ Misión seleccionada"
+                        else
+                            "Elegir como misión activa",
+                        color = if (esActiva) Gris else Morado
+                    )
+                }
+            }
+
+            TextButton(
+                onClick = onDetalle,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text(
+                    if (mision.id == "inversionista_novato" &&
+                        !completada
+                    ) "INICIAR LECCIÓN"
+                    else "VER DETALLES",
+                    color = Verde
+                )
+
+                Icon(
+                    Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = Verde
+                )
             }
         }
     }
 }
-
-@Composable
-private fun RowScope.ItemInferior(
-    titulo: String,
-    icono: ImageVector,
-    seleccionado: Boolean,
-    onClick: () -> Unit
-) {
-    NavigationBarItem(
-        selected = seleccionado,
-        onClick = onClick,
-        icon = { Icon(icono, titulo, modifier = Modifier.size(20.dp)) },
-        label = { Text(titulo, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        alwaysShowLabel = true,
-        colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = Morado,
-            selectedTextColor = Morado,
-            indicatorColor = Color(0xFFEDE9FE),
-            unselectedIconColor = Gris,
-            unselectedTextColor = Gris
-        )
-    )
-}
-

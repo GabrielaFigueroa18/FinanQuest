@@ -1,6 +1,7 @@
 package com.finanquest.sv.ui.dashboard
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.finanquest.sv.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -118,6 +122,59 @@ fun DashboardScreen(
     val nivel = progresoActual?.second ?: (usuario?.nivel ?: 1)
     val xp = progresoActual?.first ?: (usuario?.xp ?: 0)
 
+
+    // Mision seleccionada por el estudiante y progreso real de Firestore.
+    var misionElegida by remember(uid) { mutableStateOf<String?>(null) }
+    var progresosMisiones by remember(uid) { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var recompensasMisiones by remember(uid) { mutableStateOf<Set<String>>(emptySet()) }
+    DisposableEffect(uid) {
+        if (uid == null) onDispose { } else {
+            val usuarioRef = FirebaseFirestore.getInstance().collection("usuarios").document(uid)
+            val a = usuarioRef.addSnapshotListener { snap, error ->
+                if (error == null) misionElegida = snap?.getString("misionActivaId")
+            }
+            val b = usuarioRef.collection("progreso_misiones").addSnapshotListener { snap, error ->
+                if (error == null) progresosMisiones = snap?.documents?.associate {
+                    it.id to (it.getLong("progreso")?.toInt() ?: 0).coerceIn(0, 100)
+                } ?: emptyMap()
+            }
+            val c = usuarioRef.collection("recompensas_otorgadas").addSnapshotListener { snap, error ->
+                if (error == null) recompensasMisiones = snap?.documents?.map { it.id }?.toSet() ?: emptySet()
+            }
+            onDispose { a.remove(); b.remove(); c.remove() }
+        }
+    }
+    // Catálogo completo: los IDs deben coincidir con MisionesScreen.kt.
+    val catalogoMision = listOf(
+        Triple("primer_ahorro_semanal", "Primer Ahorro Semanal", 250),
+        Triple("maestro_presupuesto", "Maestro de Presupuesto", 150),
+        Triple("inversionista_novato", "Inversionista Novato", 100),
+        Triple("primer_movimiento", "Primer Movimiento", 50),
+        Triple("organizador_financiero", "Organizador Financiero", 100),
+        Triple("mi_primera_meta", "Mi Primera Meta", 100),
+        Triple("planificador_mes", "Planificador del Mes", 150),
+        Triple("ahorrador_constante", "Ahorrador Constante", 200),
+        Triple("explorador_financiero", "Explorador Financiero", 200),
+        Triple("experto_finanzas", "Experto en Finanzas", 300)
+    )
+
+    // Respetar la elección guardada, incluso cuando esté completada.
+    // Sin selección guardada, invitar a elegir una desde Mis Misiones.
+    val misionActiva = catalogoMision.firstOrNull { it.first == misionElegida }
+
+    val descripcionesMisiones = mapOf(
+        "primer_ahorro_semanal" to "Ahorra al menos $5.00 durante la semana.",
+        "maestro_presupuesto" to "Completa el módulo educativo sobre presupuestos universitarios.",
+        "inversionista_novato" to "Aprende sobre inversiones y supera la evaluación.",
+        "primer_movimiento" to "Registra tu primer ingreso o gasto.",
+        "organizador_financiero" to "Registra cinco movimientos financieros.",
+        "mi_primera_meta" to "Crea tu primera meta de ahorro.",
+        "planificador_mes" to "Organiza tus finanzas con un presupuesto mensual.",
+        "ahorrador_constante" to "Mantén el hábito de ahorrar.",
+        "explorador_financiero" to "Explora las herramientas de educación financiera.",
+        "experto_finanzas" to "Avanza en tu aprendizaje financiero."
+    )
+
     val ingresos = movimientoViewModel.movimientos.filter { it.tipo == "Ingreso" }.sumOf { it.monto }
     val gastos = movimientoViewModel.movimientos.filter { it.tipo == "Gasto" }.sumOf { it.monto }
     val saldo = cuentaViewModel.cuentas.filter { it.activa }.sumOf { it.saldo }
@@ -136,15 +193,7 @@ fun DashboardScreen(
         containerColor = Fondo,
         topBar = {
             EncabezadoDashboard(
-                onNotificaciones = onNotificaciones
-            )
-        },
-        bottomBar = {
-            MenuInferiorDashboard(
-                onMovimientos = onMovimientos,
-                onMetas = onMetas,
-                onMascota = onMascota,
-                onNiveles = onNiveles,
+                onNotificaciones = onNotificaciones,
                 onPerfil = onPerfil
             )
         }
@@ -177,7 +226,7 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            MensajeMascota(nivel = nivel, xp = xp)
+            MensajeMascota(nivel = nivel, xp = xp, onClick = onMascota)
 
             Spacer(Modifier.height(20.dp))
 
@@ -207,6 +256,21 @@ fun DashboardScreen(
 
 
 
+            if (misionActiva != null) {
+                TarjetaMisionActiva(
+                    titulo = misionActiva.second,
+                    descripcion = descripcionesMisiones[misionActiva.first]
+                        ?: "Consulta los detalles de esta misión.",
+                    xp = misionActiva.third,
+                    progreso = if (misionActiva.first in recompensasMisiones) 100
+                    else progresosMisiones[misionActiva.first] ?: 0,
+                    onClick = onMisiones
+                )
+            } else {
+                OutlinedButton(onClick = onMisiones, modifier = Modifier.fillMaxWidth()) {
+                    Text("Elegir una misión activa")
+                }
+            }
             Spacer(Modifier.height(24.dp))
 
             Row(
@@ -240,7 +304,8 @@ fun DashboardScreen(
                 onNuevoGasto = onNuevoGasto,
                 onNuevaMeta = onNuevaMeta,
                 onNuevaCategoria = onNuevaCategoria,
-                onReportes = onReportes
+                onReportes = onReportes,
+                onPresupuestos = onPresupuestos
             )
 
             Spacer(Modifier.height(16.dp))
@@ -308,7 +373,8 @@ fun DashboardScreen(
 
 @Composable
 private fun EncabezadoDashboard(
-    onNotificaciones: () -> Unit
+    onNotificaciones: () -> Unit,
+    onPerfil: () -> Unit
 ) {
     Surface(
         color = Fondo,
@@ -356,6 +422,15 @@ private fun EncabezadoDashboard(
                     tint = Texto
                 )
             }
+
+            IconButton(onClick = onPerfil) {
+                Icon(
+                    imageVector = Icons.Filled.AccountCircle,
+                    contentDescription = "Abrir perfil",
+                    tint = Morado,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
         }
     }
 }
@@ -363,10 +438,11 @@ private fun EncabezadoDashboard(
 @Composable
 private fun MensajeMascota(
     nivel: Int,
-    xp: Int
+    xp: Int,
+    onClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(22.dp),
         color = Color(0xFFF0EBFA),
         border = BorderStroke(1.dp, Color(0xFFE3D8F5))
@@ -375,43 +451,24 @@ private fun MensajeMascota(
             modifier = Modifier.padding(horizontal = 15.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MascotaQuest(modifier = Modifier.size(67.dp))
+            Image(
+                painter = painterResource(id = R.drawable.img),
+                contentDescription = "Abrir Mi mascota",
+                modifier = Modifier.size(84.dp),
+                contentScale = ContentScale.Fit
+            )
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
-                Text("Tu compañera de ahorro", color = Morado, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Text("Tu compañero financiero · Nivel $nivel", color = Morado, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(3.dp))
                 Text(
                     "Te faltan ${100 - (xp.coerceAtLeast(0) % 100)} XP para llegar al nivel ${nivel + 1}. ¡Vas bien!",
                     fontSize = 13.sp, lineHeight = 18.sp, color = Texto, fontWeight = FontWeight.Medium
                 )
+                Spacer(Modifier.height(4.dp))
+                Text("VER MI MASCOTA  ›", color = Verde, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
-    }
-}
-
-@Composable
-private fun MascotaQuest(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.Canvas(modifier = modifier) {
-        val s = size.minDimension
-        val x = (size.width - s) / 2f
-        val y = (size.height - s) / 2f
-        fun p(px: Float, py: Float) = androidx.compose.ui.geometry.Offset(x + px * s, y + py * s)
-        drawCircle(Color(0xFFDCD0F1), s * .47f, p(.5f, .53f))
-        // Rounded, hand-drawn-inspired fox face, using the app's violet and warm accent.
-        val face = androidx.compose.ui.graphics.Path().apply {
-            moveTo(x + .18f*s, y + .37f*s); quadraticBezierTo(x + .08f*s, y + .06f*s, x + .39f*s, y + .25f*s)
-            quadraticBezierTo(x + .5f*s, y + .19f*s, x + .61f*s, y + .25f*s)
-            quadraticBezierTo(x + .92f*s, y + .06f*s, x + .82f*s, y + .37f*s)
-            quadraticBezierTo(x + .95f*s, y + .83f*s, x + .5f*s, y + .86f*s)
-            quadraticBezierTo(x + .05f*s, y + .83f*s, x + .18f*s, y + .37f*s)
-            close()
-        }
-        drawPath(face, Color(0xFF7653B5))
-        drawCircle(Color(0xFFFFE8C8), s*.27f, p(.5f,.59f))
-        drawCircle(Color.White, s*.045f, p(.37f,.48f)); drawCircle(Color.White, s*.045f, p(.63f,.48f))
-        drawCircle(Color(0xFF38294D), s*.023f, p(.38f,.49f)); drawCircle(Color(0xFF38294D), s*.023f, p(.62f,.49f))
-        drawCircle(Color(0xFFE7A54B), s*.038f, p(.5f,.58f))
-        drawCircle(Color(0xFFF0A5A0), s*.045f, p(.25f,.59f)); drawCircle(Color(0xFFF0A5A0), s*.045f, p(.75f,.59f))
     }
 }
 
@@ -663,6 +720,53 @@ private fun AlertaPresupuesto(
 }
 
 @Composable
+private fun TarjetaMisionActiva(
+    titulo: String,
+    descripcion: String,
+    xp: Int,
+    progreso: Int,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(17.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Borde),
+        shadowElevation = 2.dp
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.EmojiEvents, null, tint = Naranja)
+                Spacer(Modifier.width(8.dp))
+                Text("Misión Activa", color = Texto, fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("+$xp XP", color = Morado, fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(titulo, fontWeight = FontWeight.SemiBold, color = Texto)
+            Spacer(Modifier.height(5.dp))
+            Text(descripcion, color = Gris, fontSize = 12.sp)
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("PROGRESO DE MISIÓN", color = Gris, fontSize = 11.sp)
+                Text("${progreso.coerceIn(0,100)}%", color = Texto, fontSize = 11.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { progreso.coerceIn(0,100) / 100f },
+                modifier = Modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(9.dp)),
+                color = Morado,
+                trackColor = Color(0xFFEAE7F2)
+            )
+            Spacer(Modifier.height(12.dp))
+            Text("VER TODAS MIS MISIONES  ›", color = Verde,
+                fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
 private fun TarjetaMision(onClick: () -> Unit) {
     val progreso = 0.65f
 
@@ -831,7 +935,8 @@ private fun AccionesRapidas(
     onNuevoGasto: () -> Unit,
     onNuevaMeta: () -> Unit,
     onNuevaCategoria: () -> Unit,
-    onReportes: () -> Unit
+    onReportes: () -> Unit,
+    onPresupuestos: () -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -879,6 +984,15 @@ private fun AccionesRapidas(
                 borde = Morado
             )
         }
+
+        BotonAccion(
+            texto = "PRESUPUESTOS",
+            icono = Icons.Filled.AccountBalanceWallet,
+            colorIcono = Verde,
+            onClick = onPresupuestos,
+            modifier = Modifier.fillMaxWidth(),
+            borde = Verde
+        )
     }
 }
 
@@ -925,97 +1039,3 @@ private fun BotonAccion(
         }
     }
 }
-
-@Composable
-private fun MenuInferiorDashboard(
-    onMovimientos: () -> Unit,
-    onMetas: () -> Unit,
-    onMascota: () -> Unit,
-    onNiveles: () -> Unit,
-    onPerfil: () -> Unit
-) {
-    NavigationBar(
-        containerColor = Fondo,
-        tonalElevation = 3.dp
-    ) {
-
-        ItemMenu(
-            texto = "Inicio",
-            icono = Icons.Filled.Home,
-            seleccionado = true,
-            onClick = onMetas
-        )
-
-        ItemMenu(
-            texto = "Movimientos",
-            icono = Icons.Filled.AccountBalanceWallet,
-            seleccionado = false,
-            onClick = onMovimientos
-        )
-
-        ItemMenu(
-            texto = "Metas",
-            icono = Icons.Filled.TrackChanges,
-            seleccionado = false,
-            onClick = onMetas
-        )
-
-        ItemMenu(
-            texto = "Mascota",
-            icono = Icons.Filled.Pets,
-            seleccionado = false,
-            onClick = onMascota
-        )
-
-        ItemMenu(
-            texto = "Nivel",
-            icono = Icons.Filled.EmojiEvents,
-            seleccionado = false,
-            onClick = onNiveles
-        )
-
-        ItemMenu(
-            texto = "Perfil",
-            icono = Icons.Filled.PersonOutline,
-            seleccionado = false,
-            onClick = onPerfil
-        )
-    }
-}
-
-@Composable
-private fun RowScope.ItemMenu(
-    texto: String,
-    icono: ImageVector,
-    seleccionado: Boolean,
-    onClick: () -> Unit
-) {
-    NavigationBarItem(
-        selected = seleccionado,
-        onClick = onClick,
-        icon = {
-            Icon(
-                imageVector = icono,
-                contentDescription = texto,
-                modifier = Modifier.size(21.dp)
-            )
-        },
-        label = {
-            Text(
-                text = texto,
-                fontSize = 9.sp,
-                maxLines = 1
-            )
-        },
-        alwaysShowLabel = true,
-        colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = Morado,
-            selectedTextColor = Morado,
-            indicatorColor = Color(0xFFEDE9FE),
-            unselectedIconColor = Gris,
-            unselectedTextColor = Gris
-        )
-    )
-}
-
-

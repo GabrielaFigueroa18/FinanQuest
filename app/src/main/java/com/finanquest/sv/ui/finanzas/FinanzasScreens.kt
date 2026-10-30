@@ -43,11 +43,10 @@ fun MovimientosScreen(onInicio: () -> Unit, onCuentas: () -> Unit, onNuevo: () -
     val nombres = vm.cuentas.associate { it.id to it.nombre }
     val lista = vm.movimientos.filter { m ->
         (filtro == "Todos" || m.tipo == filtro) &&
-            (m.categoria.contains(busqueda, true) || m.nota.contains(busqueda, true) ||
-                (nombres[m.cuentaId]?.contains(busqueda, true) == true))
+                (m.categoria.contains(busqueda, true) || m.nota.contains(busqueda, true) ||
+                        (nombres[m.cuentaId]?.contains(busqueda, true) == true))
     }
     Scaffold(containerColor = fondo, topBar = { TopBar("FinanQuest SV", onInicio) },
-        bottomBar = { BottomBar("Movimientos", onInicio, {}, onCuentas) },
         floatingActionButton = { FloatingActionButton(onClick = onNuevo, containerColor = verde, contentColor = Color.White) { Icon(Icons.Filled.Add, "Añadir transacción") } }) { pad ->
         Column(Modifier.fillMaxSize().padding(pad).padding(horizontal = 18.dp)) {
             Spacer(Modifier.height(10.dp))
@@ -71,10 +70,23 @@ fun MovimientosScreen(onInicio: () -> Unit, onCuentas: () -> Unit, onNuevo: () -
     }
 }
 
+
 @Composable
-fun NuevoMovimientoScreen(onVolver: () -> Unit, onExito: () -> Unit, onInicio: () -> Unit, onCuentas: () -> Unit, vm: MovimientoViewModel = viewModel()) {
+fun NuevoMovimientoScreen(
+    onVolver: () -> Unit,
+    onExito: () -> Unit,
+    onInicio: () -> Unit,
+    onCuentas: () -> Unit,
+    vm: MovimientoViewModel = viewModel()
+) {
     val presupuestoViewModel: PresupuestoViewModel = viewModel()
-    LaunchedEffect(Unit) { vm.observar(); vm.limpiarMensaje(); presupuestoViewModel.observar() }
+
+    LaunchedEffect(Unit) {
+        vm.observar()
+        vm.limpiarMensaje()
+        presupuestoViewModel.observar()
+    }
+
     var tipo by remember { mutableStateOf("Gasto") }
     var monto by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
@@ -83,63 +95,342 @@ fun NuevoMovimientoScreen(onVolver: () -> Unit, onExito: () -> Unit, onInicio: (
     var dia by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var menuCat by remember { mutableStateOf(false) }
     var menuCuenta by remember { mutableStateOf(false) }
+
     val context = androidx.compose.ui.platform.LocalContext.current
-    Scaffold(containerColor = fondo, topBar = { TopBar("Nueva transacción", onVolver) },
-        bottomBar = { BottomBar("Movimientos", onInicio, onVolver, onCuentas) }) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad).padding(18.dp).verticalScroll(rememberScrollState()).imePadding()) {
-            Row(Modifier.fillMaxWidth().background(Color(0xFFEAE5F7), RoundedCornerShape(14.dp)).padding(4.dp)) {
-                listOf("Gasto", "Ingreso").forEach { t -> TextButton(onClick = { tipo = t; categoria = "" }, modifier = Modifier.weight(1f)) {
-                    Text(t, color = if (tipo == t) morado else gris, fontWeight = FontWeight.Bold)
-                } }
-            }
-            Spacer(Modifier.height(14.dp))
-            OutlinedTextField(monto, { monto = it.filter { c -> c.isDigit() || c == '.' || c == ',' }.take(14) },
-                Modifier.fillMaxWidth(), label = { Text("Monto") }, prefix = { Text("$") }, placeholder = { Text("0.00") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, shape = RoundedCornerShape(14.dp))
-            Spacer(Modifier.height(12.dp))
-            Box {
-                OutlinedButton(onClick = { menuCat = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(categoria.ifBlank { "Seleccionar categoría" }); Spacer(Modifier.weight(1f)); Icon(Icons.Filled.ArrowDropDown, null)
-                }
-                DropdownMenu(menuCat, { menuCat = false }) {
-                    (if (tipo == "Gasto") (listOf("Comida", "Transporte", "Compras", "Educación", "Vivienda", "Salud", "Entretenimiento", "Otros") + presupuestoViewModel.categorias.map { it.nombre }).distinct() else listOf("Salario", "Beca", "Apoyo familiar", "Venta", "Reembolso", "Otros"))
-                        .forEach { DropdownMenuItem(text = { Text(it) }, onClick = { categoria = it; menuCat = false }) }
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Box {
-                OutlinedButton(onClick = { menuCuenta = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(vm.cuentas.firstOrNull { it.id == cuentaId }?.nombre ?: "Seleccionar cuenta"); Spacer(Modifier.weight(1f)); Icon(Icons.Filled.ArrowDropDown, null)
-                }
-                DropdownMenu(menuCuenta, { menuCuenta = false }) {
-                    vm.cuentas.filter { it.activa }.forEach { c ->
-                        DropdownMenuItem(text = { Text("${c.nombre} · ${dinero(c.saldo)}") }, onClick = { cuentaId = c.id; menuCuenta = false })
+    val esIngreso = tipo == "Ingreso"
+    val colorTipo = if (esIngreso) verde else morado
+
+    val categorias = if (esIngreso) {
+        listOf(
+            "Salario", "Beca", "Apoyo familiar",
+            "Venta", "Reembolso", "Otros"
+        )
+    } else {
+        (
+                listOf(
+                    "Comida", "Transporte", "Compras",
+                    "Educación", "Vivienda", "Salud",
+                    "Entretenimiento", "Otros"
+                ) + presupuestoViewModel.categorias.map { it.nombre }
+                ).distinct()
+    }
+
+    Scaffold(
+        containerColor = fondo,
+        topBar = {
+            TopBar("Nueva transacción", onVolver)
+        }
+    ) { pad ->
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(pad)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(15.dp)
+        ) {
+
+            Text(
+                "Registra tu movimiento",
+                fontSize = 23.sp,
+                fontWeight = FontWeight.Bold,
+                color = tinta
+            )
+
+            Text(
+                "Organiza tus ingresos y gastos fácilmente.",
+                fontSize = 13.sp,
+                color = gris
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
+
+                    Text(
+                        "Tipo de transacción",
+                        fontWeight = FontWeight.SemiBold,
+                        color = tinta
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Color(0xFFF0EBFA),
+                                RoundedCornerShape(15.dp)
+                            )
+                            .padding(5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf("Gasto", "Ingreso").forEach { opcion ->
+                            val seleccionado = tipo == opcion
+
+                            Surface(
+                                onClick = {
+                                    tipo = opcion
+                                    categoria = ""
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (seleccionado) {
+                                    if (opcion == "Ingreso") verde else morado
+                                } else {
+                                    Color.Transparent
+                                }
+                            ) {
+                                Text(
+                                    text = opcion,
+                                    modifier = Modifier.padding(13.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    color = if (seleccionado) Color.White else gris,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
+
+                    Text(
+                        "Monto",
+                        fontWeight = FontWeight.SemiBold,
+                        color = tinta
+                    )
+
+                    OutlinedTextField(
+                        value = monto,
+                        onValueChange = {
+                            monto = it.filter { c ->
+                                c.isDigit() || c == '.' || c == ','
+                            }.take(14)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        prefix = {
+                            Text("$", color = colorTipo, fontSize = 23.sp)
+                        },
+                        placeholder = {
+                            Text("0.00", fontSize = 23.sp)
+                        },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            fontSize = 23.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tinta
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal
+                        ),
+                        singleLine = true,
+                        shape = RoundedCornerShape(15.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = morado
+                        )
+                    )
+
+                    Text(
+                        "Categoría",
+                        fontWeight = FontWeight.SemiBold,
+                        color = tinta
+                    )
+
+                    Box {
+                        OutlinedButton(
+                            onClick = { menuCat = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 54.dp),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.Category,
+                                contentDescription = null,
+                                tint = morado
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                categoria.ifBlank { "Seleccionar categoría" },
+                                modifier = Modifier.weight(1f),
+                                color = if (categoria.isBlank()) gris else tinta
+                            )
+                            Icon(Icons.Filled.ArrowDropDown, null)
+                        }
+
+                        DropdownMenu(
+                            expanded = menuCat,
+                            onDismissRequest = { menuCat = false }
+                        ) {
+                            categorias.forEach { opcion ->
+                                DropdownMenuItem(
+                                    text = { Text(opcion) },
+                                    onClick = {
+                                        categoria = opcion
+                                        menuCat = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        "Cuenta",
+                        fontWeight = FontWeight.SemiBold,
+                        color = tinta
+                    )
+
+                    Box {
+                        OutlinedButton(
+                            onClick = { menuCuenta = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 54.dp),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = morado
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                vm.cuentas.firstOrNull {
+                                    it.id == cuentaId
+                                }?.nombre ?: "Seleccionar cuenta",
+                                modifier = Modifier.weight(1f),
+                                color = tinta
+                            )
+                            Icon(Icons.Filled.ArrowDropDown, null)
+                        }
+
+                        DropdownMenu(
+                            expanded = menuCuenta,
+                            onDismissRequest = { menuCuenta = false }
+                        ) {
+                            vm.cuentas.filter { it.activa }.forEach { cuenta ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(cuenta.nombre)
+                                            Text(
+                                                dinero(cuenta.saldo),
+                                                fontSize = 12.sp,
+                                                color = gris
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        cuentaId = cuenta.id
+                                        menuCuenta = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        "Fecha",
+                        fontWeight = FontWeight.SemiBold,
+                        color = tinta
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+                            dateDialog(context) { dia = it }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.CalendarMonth,
+                            contentDescription = null,
+                            tint = morado
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            fecha(dia),
+                            modifier = Modifier.weight(1f),
+                            color = tinta
+                        )
+                        Icon(Icons.Filled.ArrowDropDown, null)
+                    }
+
+                    OutlinedTextField(
+                        value = nota,
+                        onValueChange = { nota = it.take(160) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nota (opcional)") },
+                        placeholder = {
+                            Text("¿En qué consistió este movimiento?")
+                        },
+                        minLines = 2,
+                        maxLines = 3,
+                        shape = RoundedCornerShape(15.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = morado
+                        )
+                    )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = { dateDialog(context) { dia = it } }, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.CalendarMonth, null); Spacer(Modifier.width(8.dp)); Text(fecha(dia))
+
+            vm.mensaje?.let { Aviso(it) }
+
+            Button(
+                onClick = {
+                    vm.crear(
+                        tipo,
+                        monto,
+                        categoria,
+                        cuentaId,
+                        dia,
+                        nota,
+                        onExito
+                    )
+                },
+                enabled = !vm.cargando,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(17.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = verde
+                )
+            ) {
+                if (vm.cargando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Filled.CheckCircle, null)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Guardar transacción",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                }
             }
+
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(nota, { nota = it.take(160) }, Modifier.fillMaxWidth(), label = { Text("Nota (opcional)") },
-                minLines = 2, maxLines = 3, shape = RoundedCornerShape(14.dp))
-            vm.mensaje?.let { Spacer(Modifier.height(8.dp)); Aviso(it) }
-            Spacer(Modifier.height(14.dp))
-            Button(onClick = { vm.crear(tipo, monto, categoria, cuentaId, dia, nota, onExito) }, enabled = !vm.cargando,
-                modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = verde)) {
-                if (vm.cargando) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
-                else { Icon(Icons.Filled.CheckCircle, null); Spacer(Modifier.width(8.dp)); Text("Guardar transacción") }
-            }
         }
     }
 }
+
 
 @Composable
 fun CuentasScreen(onInicio: () -> Unit, onMovimientos: () -> Unit, onCrear: () -> Unit, onDetalle: (Cuenta) -> Unit, vm: CuentaViewModel = viewModel()) {
     LaunchedEffect(Unit) { vm.observar() }
     Scaffold(containerColor = fondo, topBar = { TopBar("FinanQuest SV", onInicio) },
-        bottomBar = { BottomBar("Cuentas", onInicio, onMovimientos, {}) },
         floatingActionButton = { ExtendedFloatingActionButton(onClick = onCrear, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Nueva") }, containerColor = verde, contentColor = Color.White) }) { pad ->
         Column(Modifier.fillMaxSize().padding(pad).padding(horizontal = 18.dp)) {
             Text("Mis cuentas", Modifier.padding(top = 10.dp), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = tinta)
@@ -177,51 +468,252 @@ fun CuentasScreen(onInicio: () -> Unit, onMovimientos: () -> Unit, onCrear: () -
 }
 
 @Composable
-fun FormularioCuentaScreen(cuenta: Cuenta?, onVolver: () -> Unit, onGuardado: () -> Unit, vm: CuentaViewModel = viewModel()) {
-    LaunchedEffect(Unit) { vm.observar(); vm.limpiarMensaje() }
+fun FormularioCuentaScreen(
+    cuenta: Cuenta?,
+    onVolver: () -> Unit,
+    onGuardado: () -> Unit,
+    vm: CuentaViewModel = viewModel()
+) {
+    LaunchedEffect(Unit) {
+        vm.observar()
+        vm.limpiarMensaje()
+    }
+
     var nombre by remember(cuenta?.id) { mutableStateOf(cuenta?.nombre.orEmpty()) }
     var tipo by remember(cuenta?.id) { mutableStateOf(cuenta?.tipo ?: "Ahorro") }
     var saldo by remember(cuenta?.id) { mutableStateOf(if (cuenta == null) "" else cuenta.saldo.toString()) }
     var descripcion by remember(cuenta?.id) { mutableStateOf(cuenta?.descripcion.orEmpty()) }
     var confirmar by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
-    Scaffold(containerColor = fondo, topBar = { TopBar(if (cuenta == null) "Nueva cuenta" else "Editar cuenta") { confirmar = true } }) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad).padding(18.dp).verticalScroll(rememberScrollState()).imePadding()) {
-            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(nombre, { nombre = it.take(50) }, Modifier.fillMaxWidth(), label = { Text("Nombre de cuenta") }, placeholder = { Text("Ej. Cuenta de ahorro") }, shape = RoundedCornerShape(12.dp), singleLine = true)
+
+    val verdePrincipal = Color(0xFF14A247)
+    val moradoFuerte = Color(0xFF6D28D9)
+    val lilaSuave = Color(0xFFF0E9FF)
+    val colorTexto = Color(0xFF252334)
+    val campos = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = verdePrincipal,
+        focusedLabelColor = verdePrincipal,
+        cursorColor = verdePrincipal,
+        unfocusedBorderColor = Color(0xFFDCD9E5)
+    )
+
+    Scaffold(
+        containerColor = Color(0xFFF8F9FB),
+        topBar = {
+            TopBar(if (cuenta == null) "Nueva cuenta" else "Editar cuenta") {
+                confirmar = true
+            }
+        }
+    ) { pad ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(pad)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = lilaSuave)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (cuenta == null) "¡Organiza tu dinero!" else "¡Tu cuenta, a tu manera!",
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF4C1D95)
+                        )
+                        Spacer(Modifier.height(7.dp))
+                        Text(
+                            if (cuenta == null) "Crea una cuenta y empieza a cumplir tus metas."
+                            else "Actualiza los detalles de tu cuenta fácilmente.",
+                            fontSize = 13.sp,
+                            color = Color(0xFF706184)
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text("🐱💜", fontSize = 30.sp)
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        "Detalles de la cuenta",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = colorTexto
+                    )
+                    Text(
+                        "Completa la información para administrar tus finanzas.",
+                        fontSize = 12.sp,
+                        color = gris
+                    )
+
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it.take(50) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nombre de cuenta") },
+                        placeholder = { Text("Ej. Mis ahorros") },
+                        leadingIcon = {
+                            Icon(Icons.Filled.AccountBalanceWallet, null, tint = moradoFuerte)
+                        },
+                        shape = RoundedCornerShape(15.dp),
+                        singleLine = true,
+                        colors = campos
+                    )
+
+                    Text("Tipo de cuenta", fontWeight = FontWeight.SemiBold, color = colorTexto)
                     Box {
-                        OutlinedButton(onClick = { menu = true }, modifier = Modifier.fillMaxWidth()) {
-                            Text(tipo); Spacer(Modifier.weight(1f)); Icon(Icons.Filled.ArrowDropDown, null)
+                        OutlinedButton(
+                            onClick = { menu = true },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
+                            shape = RoundedCornerShape(15.dp),
+                            border = BorderStroke(1.dp, Color(0xFFDCD9E5))
+                        ) {
+                            Icon(Icons.Filled.AccountBalance, null, tint = moradoFuerte)
+                            Spacer(Modifier.width(12.dp))
+                            Text(tipo, modifier = Modifier.weight(1f), color = colorTexto)
+                            Icon(Icons.Filled.ArrowDropDown, null, tint = moradoFuerte)
                         }
-                        DropdownMenu(menu, { menu = false }) {
-                            listOf("Ahorro", "Efectivo", "Cuenta corriente", "Tarjeta de crédito", "Otro").forEach {
-                                DropdownMenuItem(text = { Text(it) }, onClick = { tipo = it; menu = false })
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            listOf("Ahorro", "Efectivo", "Cuenta corriente", "Tarjeta de crédito", "Otro")
+                                .forEach { opcion ->
+                                    DropdownMenuItem(
+                                        text = { Text(opcion) },
+                                        onClick = { tipo = opcion; menu = false }
+                                    )
+                                }
+                        }
+                    }
+
+                    if (cuenta == null) {
+                        OutlinedTextField(
+                            value = saldo,
+                            onValueChange = { nuevo ->
+                                saldo = nuevo.filter { it.isDigit() || it == '.' || it == ',' }.take(14)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Saldo inicial") },
+                            placeholder = { Text("0.00") },
+                            leadingIcon = { Text("$", color = verdePrincipal, fontWeight = FontWeight.Bold) },
+                            supportingText = { Text("Puedes comenzar con 0 si aún no tienes saldo.") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            shape = RoundedCornerShape(15.dp),
+                            colors = campos
+                        )
+                    } else {
+                        Surface(
+                            color = Color(0xFFEAF8EE),
+                            shape = RoundedCornerShape(15.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text("SALDO ACTUAL", fontSize = 11.sp, color = Color(0xFF397A4E))
+                                Text(
+                                    dinero(cuenta.saldo),
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 25.sp,
+                                    color = verdePrincipal
+                                )
+                                Text("El saldo se modifica desde los movimientos.", fontSize = 11.sp, color = gris)
                             }
                         }
                     }
-                    if (cuenta == null) OutlinedTextField(saldo, { saldo = it.filter { c -> c.isDigit() || c == '.' || c == ',' }.take(14) },
-                        Modifier.fillMaxWidth(), label = { Text("Saldo inicial") }, placeholder = { Text("$ 0.00") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, shape = RoundedCornerShape(12.dp))
-                    else Text("Saldo actual: ${dinero(cuenta.saldo)}", fontWeight = FontWeight.Bold, color = morado)
-                    OutlinedTextField(descripcion, { descripcion = it.take(140) }, Modifier.fillMaxWidth(), label = { Text("Descripción (opcional)") }, minLines = 2, maxLines = 3, shape = RoundedCornerShape(12.dp))
-                    vm.mensaje?.let { Aviso(it) }
-                    Button(onClick = {
-                        if (cuenta == null) vm.crear(nombre, tipo, saldo.trim().replace(",", ".").toDoubleOrNull() ?: Double.NaN, descripcion, onGuardado)
-                        else vm.actualizar(cuenta.copy(nombre = nombre, tipo = tipo, descripcion = descripcion), onGuardado)
-                    }, enabled = !vm.cargando, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = verde)) {
-                        if (vm.cargando) CircularProgressIndicator(Modifier.size(19.dp), color = Color.White)
-                        else Text(if (cuenta == null) "Crear cuenta" else "Guardar cambios")
-                    }
-                    OutlinedButton(onClick = { confirmar = true }, modifier = Modifier.fillMaxWidth()) { Text("Cancelar", color = morado) }
+
+                    OutlinedTextField(
+                        value = descripcion,
+                        onValueChange = { descripcion = it.take(140) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Descripción (opcional)") },
+                        placeholder = { Text("¿Para qué utilizarás esta cuenta?") },
+                        leadingIcon = { Icon(Icons.Filled.Edit, null, tint = moradoFuerte) },
+                        minLines = 2,
+                        maxLines = 3,
+                        shape = RoundedCornerShape(15.dp),
+                        colors = campos
+                    )
                 }
             }
+
+            vm.mensaje?.let { Aviso(it) }
+
+            Button(
+                onClick = {
+                    if (cuenta == null) {
+                        vm.crear(
+                            nombre,
+                            tipo,
+                            saldo.trim().replace(",", ".").toDoubleOrNull() ?: Double.NaN,
+                            descripcion,
+                            onGuardado
+                        )
+                    } else {
+                        vm.actualizar(
+                            cuenta.copy(nombre = nombre, tipo = tipo, descripcion = descripcion),
+                            onGuardado
+                        )
+                    }
+                },
+                enabled = !vm.cargando,
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = verdePrincipal)
+            ) {
+                if (vm.cargando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Filled.CheckCircle, null)
+                    Spacer(Modifier.width(9.dp))
+                    Text(
+                        if (cuenta == null) "Crear cuenta" else "Guardar cambios",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            OutlinedButton(
+                onClick = { confirmar = true },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFFD9D0E9))
+            ) {
+                Text("Cancelar", color = moradoFuerte, fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(Modifier.height(10.dp))
         }
     }
-    if (confirmar) AlertDialog(onDismissRequest = { confirmar = false }, title = { Text("¿Deseas cancelar?") },
-        text = { Text("Los cambios que no hayas guardado se perderán.") },
-        confirmButton = { TextButton(onClick = onVolver) { Text("Sí") } },
-        dismissButton = { TextButton(onClick = { confirmar = false }) { Text("No") } })
+
+    if (confirmar) {
+        AlertDialog(
+            onDismissRequest = { confirmar = false },
+            title = { Text("¿Deseas cancelar?") },
+            text = { Text("Los cambios que no hayas guardado se perderán.") },
+            confirmButton = { TextButton(onClick = onVolver) { Text("Sí, salir") } },
+            dismissButton = { TextButton(onClick = { confirmar = false }) { Text("Continuar") } }
+        )
+    }
 }
 
 @Composable
@@ -253,14 +745,6 @@ private fun TopBar(titulo: String, volver: () -> Unit) {
         navigationIcon = { IconButton(onClick = volver) { Icon(Icons.Filled.ArrowBack, "Volver") } },
         actions = { Icon(Icons.Filled.Pets, null, tint = verde); Spacer(Modifier.width(14.dp)) },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = fondo))
-}
-@Composable
-private fun BottomBar(sel: String, inicio: () -> Unit, movimientos: () -> Unit, cuentas: () -> Unit) {
-    NavigationBar(containerColor = Color.White) {
-        listOf(Triple("Inicio", Icons.Filled.Home, inicio), Triple("Movimientos", Icons.Filled.AccountBalanceWallet, movimientos), Triple("Cuentas", Icons.Filled.AccountBalance, cuentas)).forEach {
-            NavigationBarItem(selected = it.first == sel, onClick = it.third, icon = { Icon(it.second, it.first) }, label = { Text(it.first, fontSize = 10.sp) })
-        }
-    }
 }
 @Composable
 private fun MovimientoFila(m: Movimiento, cuenta: String) {
@@ -309,3 +793,5 @@ private fun dateDialog(context: android.content.Context, seleccion: (Long) -> Un
         seleccion(selected.timeInMillis)
     }, today.get(java.util.Calendar.YEAR), today.get(java.util.Calendar.MONTH), today.get(java.util.Calendar.DAY_OF_MONTH)).show()
 }
+
+

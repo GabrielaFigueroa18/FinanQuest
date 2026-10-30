@@ -2,11 +2,6 @@ package com.finanquest.sv.ui.perfil
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import com.google.firebase.auth.FirebaseAuth
-import java.io.File
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,12 +18,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finanquest.sv.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
+import java.io.File
 
 private val Fondo = Color(0xFFF7F8FA)
 private val Verde = Color(0xFF16A34A)
@@ -46,6 +46,9 @@ fun PerfilScreen(
     onInformacionPersonal: () -> Unit = {},
     onSeguridad: () -> Unit = {},
     onMisCuentas: () -> Unit = {},
+    onRecompensas: () -> Unit = {},
+    onNiveles: () -> Unit = {},
+    onMascota: () -> Unit = {},
     onSincronizacion: () -> Unit = {},
     onNotificaciones: () -> Unit = {},
     onCentroAyuda: () -> Unit = {},
@@ -55,8 +58,7 @@ fun PerfilScreen(
         authViewModel.cargarPerfil()
     }
 
-    // Leer la fotografía guardada por InformacionPersonalScreen.
-    // Al volver desde esa pantalla, PerfilScreen se crea nuevamente.
+    // Fotografía local guardada desde InformacionPersonalScreen.
     val context = LocalContext.current
     val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
     val bitmapFoto = remember(uid) {
@@ -92,23 +94,17 @@ fun PerfilScreen(
         AlertDialog(
             onDismissRequest = { confirmarSalida = false },
             title = { Text("Cerrar sesión") },
-            text = {
-                Text("¿Deseas salir de tu cuenta de FinanQuest SV?")
-            },
+            text = { Text("¿Deseas salir de tu cuenta de FinanQuest SV?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmarSalida = false
-                        onCerrarSesion()
-                    }
-                ) {
+                TextButton(onClick = {
+                    confirmarSalida = false
+                    onCerrarSesion()
+                }) {
                     Text("Cerrar sesión", color = Rojo)
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { confirmarSalida = false }
-                ) {
+                TextButton(onClick = { confirmarSalida = false }) {
                     Text("Cancelar")
                 }
             }
@@ -118,10 +114,7 @@ fun PerfilScreen(
     Scaffold(
         containerColor = Fondo,
         topBar = {
-            Surface(
-                color = Fondo,
-                shadowElevation = 1.dp
-            ) {
+            Surface(color = Fondo, shadowElevation = 1.dp) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -132,10 +125,7 @@ fun PerfilScreen(
                         onClick = onVolver,
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
-                        Icon(
-                            Icons.Filled.ArrowBack,
-                            contentDescription = "Volver"
-                        )
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
                     }
 
                     Text(
@@ -159,7 +149,6 @@ fun PerfilScreen(
             }
         }
     ) { padding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -170,7 +159,6 @@ fun PerfilScreen(
         ) {
             Spacer(Modifier.height(24.dp))
 
-            // FOTO REAL GUARDADA EN ESTE TELÉFONO
             Box(
                 modifier = Modifier
                     .size(105.dp)
@@ -196,7 +184,6 @@ fun PerfilScreen(
             }
 
             Spacer(Modifier.height(14.dp))
-
             Text(
                 text = nombre,
                 fontSize = 24.sp,
@@ -204,28 +191,22 @@ fun PerfilScreen(
                 color = Texto,
                 textAlign = TextAlign.Center
             )
-
             Spacer(Modifier.height(5.dp))
-
             Text(
                 text = universidad,
                 fontSize = 14.sp,
                 color = Gris,
                 textAlign = TextAlign.Center
             )
-
             Spacer(Modifier.height(22.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 EstadisticaPerfil(
                     icono = Icons.Filled.EmojiEvents,
                     etiqueta = "nivel",
                     valor = nivel.toString(),
                     modifier = Modifier.weight(1f)
                 )
-
                 EstadisticaPerfil(
                     icono = Icons.Filled.Bolt,
                     etiqueta = "xp total",
@@ -235,17 +216,43 @@ fun PerfilScreen(
             }
 
             Spacer(Modifier.height(22.dp))
-
-            ProgresoNivel(xp = xp, nivel = nivel)
-
+            Surface(
+                onClick = onNiveles,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = Color.Transparent
+            ) { ProgresoNivel(xp = xp, nivel = nivel) }
             Spacer(Modifier.height(22.dp))
-
             MensajeMotivacional()
-
             Spacer(Modifier.height(28.dp))
 
-            TituloSeccion("CUENTA Y SEGURIDAD")
+            // Nueva sección: el destino se conecta desde AppNavigation.kt.
+            TituloSeccion("MIS LOGROS")
+            GrupoOpciones {
+                OpcionPerfil(
+                    icono = Icons.Filled.EmojiEvents,
+                    titulo = "Mis niveles",
+                    subtitulo = "Tu experiencia y progreso",
+                    onClick = onNiveles
+                )
+                HorizontalDivider(color = Borde)
+                OpcionPerfil(
+                    icono = Icons.Filled.Pets,
+                    titulo = "Mi mascota",
+                    subtitulo = "Personaliza tu gatito y sus accesorios",
+                    onClick = onMascota
+                )
+                HorizontalDivider(color = Borde)
+                OpcionPerfil(
+                    icono = Icons.Filled.EmojiEvents,
+                    titulo = "Mis Recompensas",
+                    subtitulo = "Insignias, accesorios y fondos",
+                    onClick = onRecompensas
+                )
+            }
 
+            Spacer(Modifier.height(26.dp))
+            TituloSeccion("CUENTA Y SEGURIDAD")
             GrupoOpciones {
                 OpcionPerfil(
                     icono = Icons.Filled.PersonOutline,
@@ -253,27 +260,21 @@ fun PerfilScreen(
                     subtitulo = "Nombre, correo y universidad",
                     onClick = onInformacionPersonal
                 )
-
                 HorizontalDivider(color = Borde)
-
                 OpcionPerfil(
                     icono = Icons.Filled.Security,
                     titulo = "Seguridad",
                     subtitulo = "Contraseña y validaciones",
                     onClick = onSeguridad
                 )
-
                 HorizontalDivider(color = Borde)
-
                 OpcionPerfil(
                     icono = Icons.Filled.AccountBalanceWallet,
                     titulo = "Mis Cuentas",
                     subtitulo = "Bancos y carteras",
                     onClick = onMisCuentas
                 )
-
                 HorizontalDivider(color = Borde)
-
                 OpcionPerfil(
                     icono = Icons.Filled.Storage,
                     titulo = "Sincronización",
@@ -283,52 +284,34 @@ fun PerfilScreen(
             }
 
             Spacer(Modifier.height(26.dp))
-
             TituloSeccion("PREFERENCIAS")
-
             GrupoOpciones {
                 OpcionPerfil(
                     icono = Icons.Filled.NotificationsNone,
                     titulo = "Notificaciones",
-                    onClick = {
-                        notificaciones = !notificaciones
-                    },
+                    onClick = { notificaciones = !notificaciones },
                     contenidoFinal = {
                         Switch(
                             checked = notificaciones,
-                            onCheckedChange = {
-                                notificaciones = it
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = Verde
-                            )
+                            onCheckedChange = { notificaciones = it },
+                            colors = SwitchDefaults.colors(checkedTrackColor = Verde)
                         )
                     }
                 )
-
                 HorizontalDivider(color = Borde)
-
                 OpcionPerfil(
                     icono = Icons.Filled.DarkMode,
                     titulo = "Modo Oscuro",
-                    onClick = {
-                        modoOscuro = !modoOscuro
-                    },
+                    onClick = { modoOscuro = !modoOscuro },
                     contenidoFinal = {
                         Switch(
                             checked = modoOscuro,
-                            onCheckedChange = {
-                                modoOscuro = it
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = Morado
-                            )
+                            onCheckedChange = { modoOscuro = it },
+                            colors = SwitchDefaults.colors(checkedTrackColor = Morado)
                         )
                     }
                 )
-
                 HorizontalDivider(color = Borde)
-
                 OpcionPerfil(
                     icono = Icons.Filled.Language,
                     titulo = "Idioma",
@@ -338,18 +321,14 @@ fun PerfilScreen(
             }
 
             Spacer(Modifier.height(26.dp))
-
             TituloSeccion("AYUDA Y SOPORTE")
-
             GrupoOpciones {
                 OpcionPerfil(
                     icono = Icons.Filled.HelpOutline,
                     titulo = "Centro de Ayuda",
                     onClick = onCentroAyuda
                 )
-
                 HorizontalDivider(color = Borde)
-
                 OpcionPerfil(
                     icono = Icons.Filled.StarBorder,
                     titulo = "Calificar Aplicación",
@@ -358,27 +337,18 @@ fun PerfilScreen(
             }
 
             Spacer(Modifier.height(30.dp))
-
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        confirmarSalida = true
-                    },
+                    .clickable { confirmarSalida = true },
                 color = Color.Transparent
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Filled.Logout,
-                        contentDescription = null,
-                        tint = Rojo
-                    )
-
+                    Icon(Icons.Filled.Logout, contentDescription = null, tint = Rojo)
                     Spacer(Modifier.width(14.dp))
-
                     Text(
                         text = "Cerrar Sesión",
                         color = Rojo,
@@ -386,31 +356,14 @@ fun PerfilScreen(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
-
-                    Icon(
-                        Icons.Filled.ChevronRight,
-                        contentDescription = null,
-                        tint = Gris
-                    )
+                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Gris)
                 }
             }
 
             Spacer(Modifier.height(28.dp))
-
-            Text(
-                text = "FinanQuest SV · Versión Beta",
-                color = Gris,
-                fontSize = 12.sp
-            )
-
+            Text("FinanQuest SV · Versión Beta", color = Gris, fontSize = 12.sp)
             Spacer(Modifier.height(7.dp))
-
-            Text(
-                text = "HECHO PARA ESTUDIANTES CON 💚",
-                color = Gris,
-                fontSize = 10.sp
-            )
-
+            Text("HECHO PARA ESTUDIANTES CON 💚", color = Gris, fontSize = 10.sp)
             Spacer(Modifier.height(35.dp))
         }
     }
@@ -434,39 +387,19 @@ private fun EstadisticaPerfil(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icono,
-                contentDescription = null,
-                tint = Texto
-            )
-
+            Icon(imageVector = icono, contentDescription = null, tint = Texto)
             Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = etiqueta,
-                color = Gris,
-                fontSize = 14.sp
-            )
-
+            Text(etiqueta, color = Gris, fontSize = 14.sp)
             Spacer(Modifier.height(5.dp))
-
-            Text(
-                text = valor,
-                color = Texto,
-                fontWeight = FontWeight.Bold,
-                fontSize = 21.sp
-            )
+            Text(valor, color = Texto, fontWeight = FontWeight.Bold, fontSize = 21.sp)
         }
     }
 }
 
 @Composable
-private fun ProgresoNivel(
-    xp: Int,
-    nivel: Int
-) {
-    // Fórmula provisional: 800 XP por nivel.
-    val xpPorNivel = 800
+private fun ProgresoNivel(xp: Int, nivel: Int) {
+    // Coincide con XP_POR_NIVEL = 100 en server.js.
+    val xpPorNivel = 100
     val xpNivel = xp % xpPorNivel
     val progreso = xpNivel.toFloat() / xpPorNivel
 
@@ -476,38 +409,27 @@ private fun ProgresoNivel(
         color = Fondo,
         border = BorderStroke(1.dp, Borde)
     ) {
-        Column(
-            modifier = Modifier.padding(17.dp)
-        ) {
-            Text(
-                text = "PROGRESO DE NIVEL",
-                fontSize = 12.sp,
-                color = Gris
-            )
-
+        Column(modifier = Modifier.padding(17.dp)) {
+            Text("PROGRESO DE NIVEL", fontSize = 12.sp, color = Gris)
             Spacer(Modifier.height(6.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Siguiente Nivel: ${nivel + 1}",
+                    "Siguiente Nivel: ${nivel + 1}",
                     fontWeight = FontWeight.Bold,
                     color = Texto,
                     fontSize = 15.sp
                 )
-
                 Text(
-                    text = "$xpNivel / $xpPorNivel XP",
+                    "$xpNivel / $xpPorNivel XP",
                     color = Verde,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
-
             Spacer(Modifier.height(10.dp))
-
             LinearProgressIndicator(
                 progress = { progreso },
                 modifier = Modifier
@@ -527,34 +449,24 @@ private fun MensajeMotivacional() {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = Color(0xFFF5F3FF),
-        border = BorderStroke(
-            1.dp,
-            Color(0xFFD8CCFF)
-        )
+        border = BorderStroke(1.dp, Color(0xFFD8CCFF))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "🐱",
-                fontSize = 49.sp
-            )
-
+            Text("🐱", fontSize = 49.sp)
             Spacer(Modifier.width(12.dp))
-
             Column {
                 Text(
-                    text = "¡Vas por buen camino!",
+                    "¡Vas por buen camino!",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = Texto
                 )
-
                 Spacer(Modifier.height(5.dp))
-
                 Text(
-                    text = "¡Sigue completando misiones para ganar XP y mejorar tus finanzas!",
+                    "¡Sigue completando misiones para ganar XP y mejorar tus finanzas!",
                     fontSize = 12.sp,
                     color = Texto,
                     lineHeight = 18.sp
@@ -565,9 +477,7 @@ private fun MensajeMotivacional() {
 }
 
 @Composable
-private fun TituloSeccion(
-    titulo: String
-) {
+private fun TituloSeccion(titulo: String) {
     Text(
         text = titulo,
         modifier = Modifier
@@ -579,19 +489,14 @@ private fun TituloSeccion(
 }
 
 @Composable
-private fun GrupoOpciones(
-    contenido: @Composable ColumnScope.() -> Unit
-) {
+private fun GrupoOpciones(contenido: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(19.dp),
         color = Fondo,
         shadowElevation = 2.dp
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 15.dp),
-            content = contenido
-        )
+        Column(modifier = Modifier.padding(horizontal = 15.dp), content = contenido)
     }
 }
 
@@ -624,30 +529,19 @@ private fun OpcionPerfil(
                 modifier = Modifier.size(21.dp)
             )
         }
-
         Spacer(Modifier.width(12.dp))
-
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = titulo,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Texto
             )
-
             if (subtitulo != null) {
                 Spacer(Modifier.height(3.dp))
-
-                Text(
-                    text = subtitulo,
-                    fontSize = 12.sp,
-                    color = Gris
-                )
+                Text(subtitulo, fontSize = 12.sp, color = Gris)
             }
         }
-
         if (contenidoFinal != null) {
             contenidoFinal()
         } else {
@@ -659,4 +553,3 @@ private fun OpcionPerfil(
         }
     }
 }
-
