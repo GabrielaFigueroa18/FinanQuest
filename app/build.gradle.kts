@@ -57,6 +57,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
 }
 
