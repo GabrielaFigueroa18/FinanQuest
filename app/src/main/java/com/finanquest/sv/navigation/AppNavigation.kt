@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -81,10 +82,12 @@ private enum class Pantalla {
 
 @Composable
 fun AppNavigation(
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    modoOscuro: Boolean = false,
+    onCambiarModoOscuro: (Boolean) -> Unit = {}
 ) {
 
-    var pantalla by remember {
+    var pantalla by rememberSaveable {
         mutableStateOf(
             if (authViewModel.sesionIniciada)
                 Pantalla.DASHBOARD
@@ -493,6 +496,8 @@ fun AppNavigation(
 
                 Pantalla.PERFIL -> PerfilScreen(
                     authViewModel = authViewModel,
+                    modoOscuro = modoOscuro,
+                    onCambiarModoOscuro = onCambiarModoOscuro,
                     onVolver = {
                         pantalla = Pantalla.DASHBOARD
                     },

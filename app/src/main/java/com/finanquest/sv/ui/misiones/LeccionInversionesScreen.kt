@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 
 private val VerdeLeccion = Color(0xFF16A34A)
 private val MoradoLeccion = Color(0xFF9B70FA)
-private val FondoLeccion = Color(0xFFF7F8FA)
+private val FondoLeccion: Color @Composable get() = MaterialTheme.colorScheme.background
 
 private data class PreguntaInversion(val texto: String, val opciones: List<String>, val correcta: Int)
 
@@ -76,7 +76,7 @@ fun LeccionInversionesScreen(onVolver: () -> Unit, onAprobado: () -> Unit = {}) 
     }
 
     Scaffold(containerColor = FondoLeccion, topBar = {
-        Surface(color = Color.White, shadowElevation = 2.dp) {
+        Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().height(62.dp).padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onVolver) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
                 Text("Inversionista Novato", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -104,13 +104,13 @@ fun LeccionInversionesScreen(onVolver: () -> Unit, onAprobado: () -> Unit = {}) 
             Spacer(Modifier.height(12.dp))
             Text("Diversificar significa distribuir el dinero entre diferentes activos para reducir la dependencia de uno solo. Antes de invertir, es importante entender los riesgos, las comisiones, la facilidad para retirar el dinero y verificar que la entidad esté autorizada por el regulador correspondiente.", lineHeight = 22.sp)
             Spacer(Modifier.height(8.dp))
-            Text("Este contenido es educativo y no constituye una recomendación de inversión.", fontSize = 12.sp, color = Color.Gray)
+            Text("Este contenido es educativo y no constituye una recomendación de inversión.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(24.dp))
             Text("Evaluación de conocimientos", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("Responde las 5 preguntas. Necesitas 4 correctas para aprobar.", fontSize = 13.sp, color = Color.Gray)
+            Text("Responde las 5 preguntas. Necesitas 4 correctas para aprobar.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(12.dp))
             preguntasInversion.forEachIndexed { index, pregunta ->
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(16.dp)) {
                     Column(Modifier.padding(16.dp)) {
                         Text("${index + 1}. ${pregunta.texto}", fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))

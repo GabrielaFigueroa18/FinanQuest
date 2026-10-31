@@ -1,7 +1,9 @@
 package com.finanquest.sv.ui.recompensas
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
@@ -24,7 +26,7 @@ fun DetalleRecompensaScreen(
     val morado = Color(0xFF7C3AED)
     val verde = Color(0xFF16A34A)
     Scaffold(
-        containerColor = Color(0xFFF6F7F9),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Detalle de recompensa", fontWeight = FontWeight.Bold) },
@@ -33,18 +35,18 @@ fun DetalleRecompensaScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -54,17 +56,17 @@ fun DetalleRecompensaScreen(
                 ) {
                     Text(recompensa.icono, fontSize = 68.sp)
                     Text(recompensa.nombre, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text(recompensa.descripcion, color = Color.Gray)
+                    Text(recompensa.descripcion, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             if (recompensa.desbloqueada) Icons.Default.Star else Icons.Default.Lock,
                             contentDescription = null,
-                            tint = if (recompensa.desbloqueada) verde else Color.Gray
+                            tint = if (recompensa.desbloqueada) verde else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             if (recompensa.desbloqueada) "Desbloqueada" else "Bloqueada",
-                            color = if (recompensa.desbloqueada) verde else Color.Gray,
+                            color = if (recompensa.desbloqueada) verde else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -72,13 +74,13 @@ fun DetalleRecompensaScreen(
             }
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(18.dp)) {
                     Text("¿Cómo conseguirla?", fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text(recompensa.requisito, color = Color.DarkGray)
+                    Text(recompensa.requisito, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
             Button(

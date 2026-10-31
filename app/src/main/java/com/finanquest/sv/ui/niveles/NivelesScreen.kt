@@ -22,7 +22,7 @@ import com.finanquest.sv.viewmodel.AuthViewModel
 
 private val verdeNivel = Color(0xFF14A247)
 private val moradoNivel = Color(0xFF7C3AED)
-private val fondoNivel = Color(0xFFF7F8FA)
+private val fondoNivel: Color @Composable get() = MaterialTheme.colorScheme.background
 private const val XP_POR_NIVEL = 100 // Mismo valor que server.js
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,7 +75,7 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
                             progress = { progreso },
                             modifier = Modifier.fillMaxWidth().height(12.dp),
                             color = verdeNivel,
-                            trackColor = Color.White
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                         Spacer(Modifier.height(8.dp))
                         Text("$xpActualNivel / $XP_POR_NIVEL XP · Faltan $xpRestante XP para nivel ${nivel + 1}", fontSize = 12.sp)
@@ -84,7 +84,7 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
             }
             item {
                 Text("Tu camino de niveles", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("Completa misiones para seguir avanzando.", color = Color.Gray, fontSize = 13.sp)
+                Text("Completa misiones para seguir avanzando.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
             items(nivelesVisibles) { numero ->
                 val alcanzado = numero <= nivel
@@ -92,7 +92,7 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = if (actual) Color(0xFFE8F7EC) else Color.White)
+                    colors = CardDefaults.cardColors(containerColor = if (actual) Color(0xFFE8F7EC) else MaterialTheme.colorScheme.surface)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -101,7 +101,7 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
                         Icon(
                             imageVector = if (alcanzado) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
                             contentDescription = null,
-                            tint = if (alcanzado) verdeNivel else Color.Gray,
+                            tint = if (alcanzado) verdeNivel else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(30.dp)
                         )
                         Spacer(Modifier.width(14.dp))
@@ -113,7 +113,7 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
                                     alcanzado -> "Nivel alcanzado"
                                     else -> "Se alcanza con ${(numero - 1) * XP_POR_NIVEL} XP"
                                 },
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp
                             )
                         }
@@ -122,7 +122,7 @@ fun NivelesScreen(authViewModel: AuthViewModel, onVolver: () -> Unit) {
                 }
             }
             item {
-                Text("Las insignias y accesorios se consultan en Mis recompensas.", color = Color.Gray, fontSize = 12.sp)
+                Text("Las insignias y accesorios se consultan en Mis recompensas.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
     }

@@ -44,15 +44,15 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Locale
 
-private val Fondo = Color(0xFFF7F8FA)
+private val Fondo: Color @Composable get() = MaterialTheme.colorScheme.background
 private val Verde = Color(0xFF16A34A)
 private val Morado = Color(0xFF7C3AED)
 private val Rojo = Color(0xFFEF4444)
 private val Azul = Color(0xFF5086FF)
 private val Naranja = Color(0xFFF59E0B)
-private val Texto = Color(0xFF22252B)
-private val Gris = Color(0xFF7B808A)
-private val Borde = Color(0xFFE5E7EB)
+private val Texto: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val Gris: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val Borde: Color @Composable get() = MaterialTheme.colorScheme.outline
 
 private fun formatoDinero(valor: Double): String = String.format(Locale.US, "$%,.2f", valor)
 
@@ -732,7 +732,7 @@ private fun TarjetaMisionActiva(
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(17.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, Borde),
         shadowElevation = 2.dp
     ) {
@@ -1022,7 +1022,7 @@ private fun BotonAccion(
             .height(48.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, borde),
         shadowElevation = 3.dp
     ) {

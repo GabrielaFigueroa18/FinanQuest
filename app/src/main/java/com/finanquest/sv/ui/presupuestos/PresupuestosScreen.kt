@@ -37,9 +37,9 @@ private val verde = Color(0xFF119F50)
 private val verdeClaro = Color(0xFFE8F8EF)
 private val morado = Color(0xFF7045B7)
 private val moradoClaro = Color(0xFFF2ECFC)
-private val fondo = Color(0xFFF8F9FA)
-private val texto = Color(0xFF302A40)
-private val gris = Color(0xFF777381)
+private val fondo: Color @Composable get() = MaterialTheme.colorScheme.background
+private val texto: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val gris: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val rojo = Color(0xFFE45161)
 
 private val categoriasSugeridas = listOf(
@@ -214,7 +214,7 @@ private fun ResumenPequeno(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(18.dp)
     ) {
@@ -457,7 +457,7 @@ fun PresupuestosScreen(
         if (activos.isEmpty()) {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 shape = RoundedCornerShape(20.dp)
             ) {
@@ -512,7 +512,7 @@ fun PresupuestosScreen(
                         onDetalle(presupuesto.categoria)
                     },
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 shape = RoundedCornerShape(20.dp)
             ) {
@@ -708,7 +708,7 @@ fun CrearPresupuestoScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = RoundedCornerShape(22.dp),
             elevation = CardDefaults.cardElevation(
@@ -1135,7 +1135,7 @@ fun CategoriasAlertasScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.cardElevation(
@@ -1260,7 +1260,7 @@ fun CategoriasAlertasScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 shape = RoundedCornerShape(22.dp),
                 elevation = CardDefaults.cardElevation(

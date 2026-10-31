@@ -33,17 +33,19 @@ import com.finanquest.sv.viewmodel.AuthViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 
-private val Fondo = Color(0xFFF8F9FB)
+private val Fondo: Color @Composable get() = MaterialTheme.colorScheme.background
 private val Verde = Color(0xFF119F50)
 private val Morado = Color(0xFF7045B7)
 private val Rojo = Color(0xFFEF4444)
-private val Texto = Color(0xFF302A40)
-private val Gris = Color(0xFF7B808A)
-private val Borde = Color(0xFFE5E7EB)
+private val Texto: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val Gris: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val Borde: Color @Composable get() = MaterialTheme.colorScheme.outline
 
 @Composable
 fun PerfilScreen(
     authViewModel: AuthViewModel,
+    modoOscuro: Boolean = false,
+    onCambiarModoOscuro: (Boolean) -> Unit = {},
     onCerrarSesion: () -> Unit,
     onVolver: () -> Unit,
     onInformacionPersonal: () -> Unit = {},
@@ -89,7 +91,6 @@ fun PerfilScreen(
         ?.takeIf { it.isNotBlank() }
         ?: "Universidad no especificada"
 
-    var modoOscuro by remember { mutableStateOf(false) }
     var notificaciones by remember { mutableStateOf(true) }
     var confirmarSalida by remember { mutableStateOf(false) }
 
@@ -165,7 +166,7 @@ fun PerfilScreen(
             // Encabezado con foto real y datos de Firebase.
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(24.dp),
                 shadowElevation = 2.dp
             ) {
@@ -258,7 +259,7 @@ fun PerfilScreen(
                 onClick = onNiveles,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 2.dp
             ) { ProgresoNivel(xp = xp, nivel = nivel) }
             Spacer(Modifier.height(16.dp))
@@ -341,11 +342,11 @@ fun PerfilScreen(
                 OpcionPerfil(
                     icono = Icons.Filled.DarkMode,
                     titulo = "Modo Oscuro",
-                    onClick = { modoOscuro = !modoOscuro },
+                    onClick = { onCambiarModoOscuro(!modoOscuro) },
                     contenidoFinal = {
                         Switch(
                             checked = modoOscuro,
-                            onCheckedChange = { modoOscuro = it },
+                            onCheckedChange = onCambiarModoOscuro,
                             colors = SwitchDefaults.colors(checkedTrackColor = Morado)
                         )
                     }
@@ -420,7 +421,7 @@ private fun EstadisticaPerfil(
     Surface(
         modifier = modifier.height(122.dp),
         shape = RoundedCornerShape(20.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp
     ) {
         Column(
@@ -518,7 +519,7 @@ private fun GrupoOpciones(contenido: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(19.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp
     ) {
         Column(modifier = Modifier.padding(horizontal = 15.dp), content = contenido)

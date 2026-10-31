@@ -41,8 +41,8 @@ import java.io.File
 import java.io.FileOutputStream
 
 private val VerdePerfil = Color(0xFF16A34A)
-private val FondoPerfil = Color(0xFFF8FAFC)
-private val TextoPerfil = Color(0xFF172033)
+private val FondoPerfil: Color @Composable get() = MaterialTheme.colorScheme.background
+private val TextoPerfil: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 private val MoradoPerfil = Color(0xFF7C3AED)
 
 @Composable
@@ -121,7 +121,7 @@ fun InformacionPersonalScreen(
         containerColor = FondoPerfil,
         topBar = {
             Surface(
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 1.dp
             ) {
                 Row(
@@ -240,7 +240,7 @@ fun InformacionPersonalScreen(
                     Text(
                         text = "Personaliza tu cuenta con una fotografía",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(Modifier.height(14.dp))
@@ -272,7 +272,7 @@ fun InformacionPersonalScreen(
             // DATOS PERSONALES
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(20.dp),
                 shadowElevation = 2.dp
             ) {
@@ -340,7 +340,7 @@ fun InformacionPersonalScreen(
                     Text(
                         text = "El correo está protegido y no se modifica aquí.",
                         fontSize = 11.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 5.dp)
                     )
 

@@ -49,8 +49,8 @@ private const val BACKEND_URL = "http://192.168.0.53:3001"
 private val Morado = Color(0xFF6B4EB0)
 private val MoradoOscuro = Color(0xFF241653)
 private val Lila = Color(0xFFF0EBFC)
-private val Fondo = Color(0xFFFAF8FF)
-private val TextoSecundario = Color(0xFF79738F)
+private val Fondo: Color @Composable get() = MaterialTheme.colorScheme.background
+private val TextoSecundario: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 
 private data class Noticia(
     val titulo: String,
@@ -121,8 +121,8 @@ fun NoticiasScreen(onVolver: () -> Unit) {
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Morado,
                         unfocusedBorderColor = Color(0xFFE4DCF5),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { consulta = busqueda.trim() })
@@ -168,7 +168,7 @@ fun NoticiasScreen(onVolver: () -> Unit) {
                     }
                 }
                 error != null -> item {
-                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(20.dp)) {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(20.dp)) {
                         Column(Modifier.fillMaxWidth().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("No pudimos cargar las noticias", fontWeight = FontWeight.Bold, color = MoradoOscuro)
                             Spacer(Modifier.height(8.dp))
@@ -200,7 +200,7 @@ private fun TarjetaNoticia(noticia: Noticia, onAbrir: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(Modifier.fillMaxWidth().padding(15.dp)) {

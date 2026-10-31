@@ -51,9 +51,9 @@ private val moradoRep = Color(0xFF7045B7)
 private val moradoClaroRep = Color(0xFFF2ECFC)
 private val rojoRep = Color(0xFFE45161)
 private val rojoClaroRep = Color(0xFFFDECEF)
-private val fondoRep = Color(0xFFF8F9FA)
-private val textoRep = Color(0xFF302A40)
-private val grisRep = Color(0xFF777381)
+private val fondoRep: Color @Composable get() = MaterialTheme.colorScheme.background
+private val textoRep: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val grisRep: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 private val coloresGrafico = listOf(
     Color(0xFF119F50),
@@ -240,7 +240,7 @@ fun ReportesScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 shape = RoundedCornerShape(18.dp)
             ) {
@@ -491,7 +491,7 @@ fun ReportesScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(20.dp)
                 ) {
@@ -527,7 +527,7 @@ fun ReportesScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(22.dp)
                 ) {

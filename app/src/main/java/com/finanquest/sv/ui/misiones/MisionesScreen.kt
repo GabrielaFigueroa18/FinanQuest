@@ -33,14 +33,14 @@ import com.google.firebase.firestore.FirebaseFirestore
 // COLORES FINANQUEST
 // ==========================================
 
-private val Fondo = Color(0xFFF8F9FA)
+private val Fondo: Color @Composable get() = MaterialTheme.colorScheme.background
 private val Morado = Color(0xFF7045B7)
 private val MoradoClaro = Color(0xFFF2ECFC)
 private val Verde = Color(0xFF119F50)
 private val VerdeClaro = Color(0xFFE8F8EF)
-private val Texto = Color(0xFF302A40)
-private val Gris = Color(0xFF777381)
-private val Borde = Color(0xFFE8E7ED)
+private val Texto: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val Gris: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val Borde: Color @Composable get() = MaterialTheme.colorScheme.outline
 
 // ==========================================
 // MODELO DE MISIÓN
@@ -336,7 +336,7 @@ fun MisionesScreen(
     Scaffold(
         containerColor = Fondo,
         topBar = {
-            Surface(color = Color.White) {
+            Surface(color = MaterialTheme.colorScheme.surface) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -549,7 +549,7 @@ fun MisionesScreen(
 
             TabRow(
                 selectedTabIndex = pestana,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = Morado,
                 indicator = { posiciones ->
                     TabRowDefaults.SecondaryIndicator(
@@ -616,7 +616,7 @@ fun MisionesScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(20.dp)
                 ) {
@@ -925,7 +925,7 @@ private fun TarjetaMision(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             if (esActiva && !completada) 1.5.dp else 1.dp,

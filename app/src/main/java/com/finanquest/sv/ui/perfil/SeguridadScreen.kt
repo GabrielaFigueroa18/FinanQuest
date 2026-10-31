@@ -22,9 +22,9 @@ import com.google.firebase.auth.FirebaseAuth
 
 private val VerdeSeguridad = Color(0xFF16A34A)
 private val MoradoSeguridad = Color(0xFF7C3AED)
-private val FondoSeguridad = Color(0xFFF8FAFC)
-private val TextoSeguridad = Color(0xFF172033)
-private val GrisSeguridad = Color(0xFF64748B)
+private val FondoSeguridad: Color @Composable get() = MaterialTheme.colorScheme.background
+private val TextoSeguridad: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val GrisSeguridad: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
 fun SeguridadScreen(
@@ -57,7 +57,7 @@ fun SeguridadScreen(
         containerColor = FondoSeguridad,
         topBar = {
             Surface(
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 1.dp
             ) {
                 Row(
@@ -142,7 +142,7 @@ fun SeguridadScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(
                     1.dp,
                     Color(0xFFE5E7EB)
@@ -233,7 +233,7 @@ fun SeguridadScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                color = Color.White
+                color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp)

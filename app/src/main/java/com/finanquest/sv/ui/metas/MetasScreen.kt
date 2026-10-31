@@ -46,7 +46,7 @@ import java.util.Locale
 
 private val vmor = Color(0xFF7C3AED)
 private val vverde = Color(0xFF14A247)
-private val vfondo = Color(0xFFF4FAF6)
+private val vfondo: Color @Composable get() = MaterialTheme.colorScheme.background
 private val verdePrincipal = Color(0xFF14A247)
 private val verdeOscuro = Color(0xFF0D873B)
 private val verdeClaro = Color(0xFFE5F6EB)
@@ -79,7 +79,7 @@ fun MetasScreen(
   containerColor = vfondo,
   topBar = {
    TopAppBar(
-    title = { Text("Mis metas", fontWeight = FontWeight.ExtraBold, color = Color.Black) },
+    title = { Text("Mis metas", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface) },
     navigationIcon = {
      IconButton(onClick = onVolver) {
       Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = verdeOscuro)
@@ -120,7 +120,7 @@ fun MetasScreen(
         Text("¡Vas más cerca de lograrlo!", color = Color(0xFF6B5A85), fontSize = 13.sp)
        }
        Box(
-        modifier = Modifier.size(57.dp).background(Color.White.copy(alpha = 0.70f), CircleShape),
+        modifier = Modifier.size(57.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.70f), CircleShape),
         contentAlignment = Alignment.Center
        ) { Text("🐱💜", fontSize = 25.sp) }
       }
@@ -182,7 +182,7 @@ fun MetasScreen(
    item {
     Row(verticalAlignment = Alignment.CenterVertically) {
      Column(Modifier.weight(1f)) {
-      Text("Tus objetivos", fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, color = Color(0xFF193B2B))
+      Text("Tus objetivos", fontWeight = FontWeight.ExtraBold, fontSize = 21.sp, color = MaterialTheme.colorScheme.onSurface)
       Text("Pequeños pasos, grandes logros", fontSize = 12.sp, color = Color(0xFF728478))
      }
      Box(Modifier.background(moradoSuave, RoundedCornerShape(50)).padding(horizontal = 12.dp, vertical = 7.dp)) {
@@ -194,11 +194,11 @@ fun MetasScreen(
     item { Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = verdePrincipal) } }
    } else if (metas.isEmpty()) {
     item {
-     Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(24.dp)) {
+     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp)) {
       Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
        Text("🌱", fontSize = 42.sp)
        Text("Tu primer sueño empieza aquí", fontWeight = FontWeight.Bold, color = verdeOscuro, fontSize = 17.sp)
-       Text("Crea una meta y empieza a ahorrar a tu ritmo.", color = Color.Gray, fontSize = 13.sp)
+       Text("Crea una meta y empieza a ahorrar a tu ritmo.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
        OutlinedButton(onClick = onNuevaMeta) { Text("Empezar a ahorrar") }
       }
      }
@@ -211,7 +211,7 @@ fun MetasScreen(
      Card(
       modifier = Modifier.fillMaxWidth().shadow(5.dp, RoundedCornerShape(23.dp), ambientColor = Color(0xFFB7D8C3).copy(alpha = 0.25f)).clickable { onDetalle(meta) },
       shape = RoundedCornerShape(23.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White)
+      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
      ) {
       Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
        Row(verticalAlignment = Alignment.CenterVertically) {
@@ -220,7 +220,7 @@ fun MetasScreen(
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-         Text(meta.nombre, fontWeight = FontWeight.ExtraBold, color = Color(0xFF203C2D), fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+         Text(meta.nombre, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
          Spacer(Modifier.height(3.dp))
          Text(if (completa) "¡Objetivo cumplido! 🎉" else "Tu sueño está en marcha", color = if (completa) verdePrincipal else Color(0xFF7A8B80), fontSize = 12.sp)
         }
@@ -322,7 +322,7 @@ fun CrearMetaScreen(
     }
    }
 
-   Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+   Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
      Text("Detalles de tu meta", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = moradoOscuro)
      OutlinedTextField(
@@ -400,14 +400,14 @@ fun CrearMetaScreen(
       Card(
        modifier = Modifier.fillMaxWidth().clickable { cuentaId = cuenta.id },
        shape = RoundedCornerShape(16.dp),
-       colors = CardDefaults.cardColors(containerColor = Color.White),
+       colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
        border = if (seleccionada) androidx.compose.foundation.BorderStroke(2.dp, vmor) else null
       ) {
        Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
         RadioButton(selected = seleccionada, onClick = { cuentaId = cuenta.id })
         Column(Modifier.weight(1f)) {
          Text(cuenta.nombre, fontWeight = FontWeight.SemiBold)
-         Text(cuenta.tipo, fontSize = 12.sp, color = Color.Gray)
+         Text(cuenta.tipo, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(monedaMeta(cuenta.saldo), color = moradoOscuro, fontWeight = FontWeight.Bold)
        }
@@ -506,7 +506,7 @@ fun DetalleMetaScreen(
   ) {
    Card(
     shape = RoundedCornerShape(24.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     modifier = Modifier.fillMaxWidth()
    ) {
     Column(
@@ -516,9 +516,9 @@ fun DetalleMetaScreen(
     ) {
      Text("🐱💜", fontSize = 48.sp)
      Text(actual.icono + "  " + actual.nombre, fontSize = 21.sp, fontWeight = FontWeight.Bold)
-     Text("Cada aporte te acerca a tu sueño", color = Color.Gray, fontSize = 13.sp)
+     Text("Cada aporte te acerca a tu sueño", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
      Text(monedaMeta(actual.actual), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = vmor)
-     Text("de ${monedaMeta(actual.objetivo)}", color = Color.Gray)
+     Text("de ${monedaMeta(actual.objetivo)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
      LinearProgressIndicator(
       progress = { progreso.toFloat() },
       modifier = Modifier.fillMaxWidth().height(10.dp),
@@ -527,9 +527,9 @@ fun DetalleMetaScreen(
      )
      Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
       Text("${(progreso * 100).toInt()}% completado", color = vmor, fontWeight = FontWeight.SemiBold)
-      Text("Faltan ${monedaMeta(pendiente)}", color = Color.Gray, fontSize = 12.sp)
+      Text("Faltan ${monedaMeta(pendiente)}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
      }
-     if (actual.fechaLimite > 0) Text("Fecha límite: ${fechaMeta(actual.fechaLimite)}", color = Color.Gray)
+     if (actual.fechaLimite > 0) Text("Fecha límite: ${fechaMeta(actual.fechaLimite)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
    }
 
@@ -553,11 +553,11 @@ fun DetalleMetaScreen(
    ) { Text(if (pendiente <= 0) "¡Meta completada! 🎉" else "＋ Agregar aporte") }
 
    Text("Actividad reciente", fontWeight = FontWeight.Bold, fontSize = 19.sp)
-   if (vm.aportes.isEmpty()) Text("Aún no hay aportes.", color = Color.Gray)
+   if (vm.aportes.isEmpty()) Text("Aún no hay aportes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
    vm.aportes.forEach { aporte ->
     Card(
      shape = RoundedCornerShape(16.dp),
-     colors = CardDefaults.cardColors(containerColor = Color.White),
+     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
      modifier = Modifier.fillMaxWidth()
     ) {
      Row(
@@ -567,7 +567,7 @@ fun DetalleMetaScreen(
      ) {
       Column(Modifier.weight(1f)) {
        Text(if (aporte.nota.isBlank()) "Aporte a la meta" else aporte.nota, fontWeight = FontWeight.Medium)
-       Text(fechaMeta(aporte.fecha), color = Color.Gray, fontSize = 12.sp)
+       Text(fechaMeta(aporte.fecha), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
       }
       Text("+${monedaMeta(aporte.monto)}", color = vverde, fontWeight = FontWeight.Bold)
      }
@@ -585,7 +585,7 @@ fun DetalleMetaScreen(
      verticalArrangement = Arrangement.spacedBy(10.dp),
      modifier = Modifier.heightIn(max = 450.dp).verticalScroll(rememberScrollState())
     ) {
-     Text("Elige la cuenta desde donde ahorrarás.", fontSize = 13.sp, color = Color.Gray)
+     Text("Elige la cuenta desde donde ahorrarás.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
      errorCuentas?.let { Text(it, color = Color(0xFFB42318), fontSize = 12.sp) }
      if (cuentas.isEmpty()) Text("No hay cuentas activas. Crea una cuenta primero.", color = Color(0xFFB42318))
      cuentas.forEach { cuenta ->
@@ -610,7 +610,7 @@ fun DetalleMetaScreen(
        )
        Column {
         Text(cuenta.nombre, fontWeight = FontWeight.SemiBold)
-        Text("Disponible: ${monedaMeta(cuenta.saldo)}", fontSize = 12.sp, color = Color.Gray)
+        Text("Disponible: ${monedaMeta(cuenta.saldo)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
        }
       }
      }
@@ -628,7 +628,7 @@ fun DetalleMetaScreen(
       singleLine = true,
       modifier = Modifier.fillMaxWidth()
      )
-     Text("Pendiente de la meta: ${monedaMeta(pendiente)}", color = Color.Gray, fontSize = 12.sp)
+     Text("Pendiente de la meta: ${monedaMeta(pendiente)}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
      if (montoNumero != null && seleccionada != null && montoNumero > seleccionada.saldo) {
       Text("La cuenta no tiene saldo suficiente.", color = Color(0xFFB42318), fontSize = 12.sp)
      }

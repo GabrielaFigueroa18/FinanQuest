@@ -32,7 +32,7 @@ import com.google.firebase.firestore.SetOptions
 private val verde = Color(0xFF14A247)
 private val morado = Color(0xFF7C3AED)
 private val lila = Color(0xFFF0E9FF)
-private val fondoPantalla = Color(0xFFF7F8FA)
+private val fondoPantalla: Color @Composable get() = MaterialTheme.colorScheme.background
 
 private data class PremioMascota(
     val id: String,
@@ -175,7 +175,7 @@ fun MascotaScreen(onVolver: () -> Unit) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -281,7 +281,7 @@ fun MascotaScreen(onVolver: () -> Unit) {
             // Pestañas
             TabRow(
                 selectedTabIndex = pestana,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = morado
             ) {
                 listOf("Progreso", "Evolución", "Armario")
@@ -306,7 +306,7 @@ fun MascotaScreen(onVolver: () -> Unit) {
                     Card(
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
                         Column(
@@ -324,7 +324,7 @@ fun MascotaScreen(onVolver: () -> Unit) {
                                 "¡Sigue completando misiones para " +
                                         "crecer junto a tu gatito!",
                                 fontSize = 13.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             LinearProgressIndicator(
@@ -405,7 +405,7 @@ fun MascotaScreen(onVolver: () -> Unit) {
                     Card(
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
                         Column(
@@ -442,7 +442,7 @@ fun MascotaScreen(onVolver: () -> Unit) {
                                         "La ilustración del gatito se mantiene " +
                                         "hasta agregar sus versiones evolucionadas.",
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -502,7 +502,7 @@ fun MascotaScreen(onVolver: () -> Unit) {
                     Text(
                         "Desbloquea nuevos accesorios y fondos " +
                                 "desde Mis recompensas.",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
 
@@ -591,7 +591,7 @@ private fun DatoMascota(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
@@ -604,7 +604,7 @@ private fun DatoMascota(
             Text(
                 titulo,
                 fontSize = 12.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 valor,
@@ -644,7 +644,7 @@ private fun EtapaMascota(
                 Text(
                     requisito,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
@@ -670,7 +670,7 @@ private fun PremioSeleccionable(
                 onClick = onClick
             ),
         shape = RoundedCornerShape(16.dp),
-        color = if (seleccionado) lila else Color.White,
+        color = if (seleccionado) lila else MaterialTheme.colorScheme.surface,
         border = BorderStroke(
             if (seleccionado) 2.dp else 1.dp,
             if (seleccionado) morado
@@ -687,7 +687,7 @@ private fun PremioSeleccionable(
                 Icon(
                     Icons.Default.Lock,
                     contentDescription = "Bloqueado",
-                    tint = Color.Gray
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -703,7 +703,7 @@ private fun PremioSeleccionable(
             Text(
                 if (disponible) "Disponible" else "Bloqueado",
                 fontSize = 10.sp,
-                color = if (disponible) verde else Color.Gray
+                color = if (disponible) verde else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

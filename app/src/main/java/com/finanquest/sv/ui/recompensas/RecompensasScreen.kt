@@ -24,7 +24,7 @@ import com.finanquest.sv.viewmodel.RecompensasViewModel
 
 private val Morado = Color(0xFF7C3AED)
 private val Verde = Color(0xFF16A34A)
-private val Fondo = Color(0xFFF6F7F9)
+private val Fondo: Color @Composable get() = MaterialTheme.colorScheme.background
 
 // Se conserva el modelo para mantener compatible DetalleRecompensaScreen y AppNavigation.
 data class Recompensa(
@@ -86,7 +86,7 @@ fun RecompensasScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -101,14 +101,14 @@ fun RecompensasScreen(
                     .fillMaxWidth()
                     .padding(16.dp),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(Modifier.padding(18.dp)) {
                     Text("🏆 Tu colección", fontSize = 19.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "$totalObtenidas de ${catalogoRecompensas.size} recompensas desbloqueadas",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                     Spacer(Modifier.height(12.dp))
@@ -149,13 +149,13 @@ fun RecompensasScreen(
             Text(
                 "Completa desafíos para desbloquear premios.",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp
             )
 
             TabRow(
                 selectedTabIndex = pestana,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = Morado
             ) {
                 categorias.forEachIndexed { indice, categoria ->
@@ -191,7 +191,7 @@ fun RecompensasScreen(
                         Text(
                             "Todavía no tienes recompensas desbloqueadas en esta categoría.",
                             modifier = Modifier.padding(vertical = 28.dp),
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -205,7 +205,7 @@ fun RecompensasScreen(
                                 onDetalle(recompensa.copy(desbloqueada = desbloqueada))
                             },
                         shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, Color(0xFFE8E7EE))
                     ) {
                         Row(
@@ -221,13 +221,13 @@ fun RecompensasScreen(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     recompensa.descripcion,
-                                    color = Color.Gray,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
                                     if (desbloqueada) "Desbloqueada" else "Bloqueada",
-                                    color = if (desbloqueada) Verde else Color.Gray,
+                                    color = if (desbloqueada) Verde else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -235,7 +235,7 @@ fun RecompensasScreen(
                             Icon(
                                 if (desbloqueada) Icons.Default.Star else Icons.Default.Lock,
                                 contentDescription = null,
-                                tint = if (desbloqueada) Verde else Color.Gray
+                                tint = if (desbloqueada) Verde else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Icon(
                                 Icons.Default.ChevronRight,

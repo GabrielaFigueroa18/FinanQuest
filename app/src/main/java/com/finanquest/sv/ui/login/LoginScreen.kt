@@ -28,12 +28,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finanquest.sv.viewmodel.AuthViewModel
 
-private val Fondo = Color(0xFFF7F8FA)
+private val Fondo: Color @Composable get() = MaterialTheme.colorScheme.background
 private val Verde = Color(0xFF16A34A)
 private val Morado = Color(0xFF7C3AED)
-private val Texto = Color(0xFF22252B)
-private val Gris = Color(0xFF8B9099)
-private val Borde = Color(0xFFE5E7EB)
+private val Texto: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val Gris: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val Borde: Color @Composable get() = MaterialTheme.colorScheme.outline
 
 @Composable
 fun LoginScreen(

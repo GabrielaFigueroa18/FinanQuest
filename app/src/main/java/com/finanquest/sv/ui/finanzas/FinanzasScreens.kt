@@ -37,11 +37,11 @@ import java.util.Calendar
 // COLORES Y FUNCIONES GENERALES
 // =======================================================
 
-private val fondo = Color(0xFFF7F8FA)
+private val fondo: Color @Composable get() = MaterialTheme.colorScheme.background
 private val verde = Color(0xFF16A34A)
 private val morado = Color(0xFF7C3AED)
-private val tinta = Color(0xFF20232A)
-private val gris = Color(0xFF7B808A)
+private val tinta: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val gris: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val verdeClaro = Color(0xFFE8F8EF)
 private val moradoClaro = Color(0xFFF2ECFC)
 
@@ -600,7 +600,7 @@ fun NuevoMovimientoScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Column(
@@ -1162,7 +1162,7 @@ fun CuentasScreen(
                                 },
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.surface
                             ),
                             elevation = CardDefaults.cardElevation(
                                 defaultElevation = 2.dp
@@ -1462,7 +1462,7 @@ fun FormularioCuentaScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 elevation = CardDefaults.cardElevation(
                     defaultElevation = 2.dp
@@ -2072,7 +2072,7 @@ private fun MovimientoFila(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(19.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp
@@ -2169,7 +2169,7 @@ private fun Vacio(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(

@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.sp
 import com.finanquest.sv.R
 
 // Colores de FinanQuest SV
-private val Fondo = Color(0xFFF4F5FA)
+private val Fondo: Color @Composable get() = MaterialTheme.colorScheme.background
 private val Morado = Color(0xFF7C3AED)
 private val Verde = Color(0xFF16A34A)
-private val TextoOscuro = Color(0xFF172033)
-private val TextoSecundario = Color(0xFF667085)
+private val TextoOscuro: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+private val TextoSecundario: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 
 @Composable
 fun BienvenidaScreen(
@@ -162,7 +162,7 @@ private fun BotonBienvenida(
                 shape = RoundedCornerShape(18.dp)
             )
             .background(
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(18.dp)
             )
             .clickable(onClick = onClick)
